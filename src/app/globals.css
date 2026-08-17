@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes protocol-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+:root {
+  --color-base: 233 243 242;
+  --shadow-light: 255 255 255;
+  --shadow-dark: 196 219 216;
+  --sand-100: 255 249 211;
+  --sand-300: 253 244 176;
+  --mint-200: 211 241 223;
+  --mint-400: 164 220 185;
+  --aqua-300: 158 231 222;
+  --aqua-400: 91 206 191;
+  --turquoise-500: 50 185 190;
+  --ocean-600: 46 151 183;
+  --ocean-700: 27 107 133;
+  --ocean-800: 27 107 133;
+  --ocean-900: 13 58 70;
+  --ink-400: 127 163 173;
+  --ink-600: 62 108 121;
+  --ink-900: 13 58 70;
+  --text-primary: 13 58 70;
+  --text-secondary: 62 108 121;
+  --text-placeholder: 127 163 173;
+  --danger-100: 255 229 226;
+  --danger-600: 180 68 63;
+  --focus-ring: 46 151 183;
+  --nm-raised-sm: 4px 4px 8px rgb(var(--shadow-dark) / 0.68), -4px -4px 8px rgb(var(--shadow-light) / 0.92);
+  --nm-raised: 8px 8px 16px rgb(var(--shadow-dark) / 0.7), -8px -8px 16px rgb(var(--shadow-light) / 0.92);
+  --nm-raised-lg: 12px 12px 24px rgb(var(--shadow-dark) / 0.72), -12px -12px 24px rgb(var(--shadow-light) / 0.9);
+  --nm-pressed: inset 4px 4px 8px rgb(var(--shadow-dark) / 0.68), inset -4px -4px 8px rgb(var(--shadow-light) / 0.95);
+  --nm-focus: 0 0 0 3px rgb(var(--focus-ring) / 0.55);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: rgb(var(--color-base));
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgb(var(--mint-400) / 0.22), transparent 30rem),
+    linear-gradient(180deg, rgb(var(--color-base)), rgb(var(--color-base)));
+  color: rgb(var(--text-primary));
+  font-family: var(--font-inter), sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgb(var(--sand-300));
+  color: rgb(var(--ocean-900));
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: rgb(var(--text-primary));
+    font-family: var(--font-outfit), sans-serif;
+    letter-spacing: 0;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  :focus-visible {
+    outline: 3px solid rgb(var(--focus-ring) / 0.55);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .nm-raised-sm {
+    box-shadow: var(--nm-raised-sm);
+  }
+
+  .nm-raised {
+    box-shadow: var(--nm-raised);
+  }
+
+  .nm-raised-lg {
+    box-shadow: var(--nm-raised-lg);
+  }
+
+  .nm-pressed {
+    box-shadow: var(--nm-pressed);
+  }
+
+  .surface-neuro {
+    border-radius: 18px;
+    background: rgb(var(--color-base));
+    box-shadow: var(--nm-raised-lg);
+  }
+
+  .surface-neuro-sm {
+    border-radius: 14px;
+    background: rgb(var(--color-base));
+    box-shadow: var(--nm-raised-sm);
+  }
+
+  .field-inset {
+    min-height: 44px;
+    border: 1px solid rgb(var(--ocean-600) / 0.28);
+    border-radius: 12px;
+    background: rgb(var(--color-base));
+    box-shadow: var(--nm-pressed);
+    color: rgb(var(--text-primary));
+  }
+
+  .field-inset::placeholder {
+    color: rgb(var(--text-placeholder));
+  }
+
+  .btn-primary {
+    min-height: 44px;
+    border-radius: 12px;
+    background: rgb(var(--ocean-800));
+    color: white;
+    font-weight: 700;
+    box-shadow: var(--nm-raised-sm);
+  }
+
+  .btn-primary:hover {
+    background: rgb(var(--ocean-900));
+  }
+
+  .btn-secondary {
+    min-height: 44px;
+    border: 1px solid rgb(var(--ocean-600) / 0.28);
+    border-radius: 12px;
+    background: rgb(var(--aqua-400));
+    color: rgb(var(--ocean-900));
+    font-weight: 700;
+  }
+
+  .protocol {
+    font-family: var(--font-jetbrains-mono), monospace;
+    letter-spacing: 0;
+  }
+}

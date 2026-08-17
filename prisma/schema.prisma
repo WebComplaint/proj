@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Perfil {
+  COORDENADOR
+  ADMIN
+}
+
+enum StatusDenuncia {
+  RECEBIDA
+  EM_ANALISE
+  EM_ANDAMENTO
+  RESOLVIDA
+  ARQUIVADA
+}
+
+enum Prioridade {
+  BAIXA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+model Usuario {
+  id           String   @id @default(cuid())
+  authUserId   String   @unique @db.Uuid
+  nome         String
+  email        String   @unique
+  perfil       Perfil   @default(COORDENADOR)
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  denunciasResponsavel Denuncia[]  @relation("Responsavel")
+  historicos           Historico[]
+}
+
+model Categoria {
+  id               String     @id @default(cuid())
+  nome             String     @unique
+  slug             String     @unique
+  descricao        String?    @db.Text
+  icone            String?
+  prioridadePadrao Prioridade @default(MEDIA)
+  ativa            Boolean    @default(true)
+  ordem            Int        @default(0)
+
+  denuncias Denuncia[]
+}
+
+model Denuncia {
+  id            String         @id @default(cuid())
+  protocolo     String         @unique
+  categoriaId   String
+  anonima       Boolean        @default(true)
+  descricao     String         @db.Text
+  dataOcorrido  DateTime?
+  local         String?
+  envolvidos    String?        @db.Text
+  status        StatusDenuncia @default(RECEBIDA)
+  prioridade    Prioridade     @default(MEDIA)
+
+  // Preenchidos SOMENTE quando anonima = false (RN-01)
+  denuncianteNome     String?
+  denuncianteEmail    String?
+  denuncianteTelefone String?
+
+  responsavelId String?
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+
+  categoria   Categoria  @relation(fields: [categoriaId], references: [id])
+  responsavel Usuario?   @relation("Responsavel", fields: [responsavelId], references: [id])
+  anexos      Anexo[]
+  historico   Historico[]
+
+  @@index([status])
+  @@index([categoriaId])
+  @@index([criadoEm])
+}
+
+model Anexo {
+  id           String   @id @default(cuid())
+  denunciaId   String
+  arquivoUrl   String
+  nomeOriginal String
+  tipoMime     String
+  tamanho      Int
+  criadoEm     DateTime @default(now())
+
+  denuncia Denuncia @relation(fields: [denunciaId], references: [id], onDelete: Cascade)
+
+  @@index([denunciaId])
+}
+
+model Historico {
+  id             String          @id @default(cuid())
+  denunciaId     String
+  usuarioId      String?
+  statusAnterior StatusDenuncia?
+  statusNovo     StatusDenuncia?
+  comentario     String?         @db.Text
+  publico        Boolean         @default(false)
+  criadoEm       DateTime        @default(now())
+
+  denuncia Denuncia @relation(fields: [denunciaId], references: [id], onDelete: Cascade)
+  usuario  Usuario? @relation(fields: [usuarioId], references: [id])
+
+  @@index([denunciaId])
+}

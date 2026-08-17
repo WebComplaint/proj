@@ -1,0 +1,17 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Web Complaint</title>
+  <defs>
+    <linearGradient id="brand" x1="24" y1="18" x2="104" y2="110" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1B6B85"/>
+      <stop offset="1" stop-color="#12485E"/>
+    </linearGradient>
+    <filter id="shadow" x="12" y="12" width="104" height="108" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#12485E" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+  <circle cx="64" cy="61" r="50" fill="#E9F3F2"/>
+  <path d="M64 17C82.7 17 98 31.1 98 48.5V69.5C98 85.3 85.4 98.4 69 100.7L55.5 112V100.5C38.8 98.6 26 85.4 26 69.5V48.5C26 31.1 41.3 17 60 17H64Z" fill="url(#brand)" filter="url(#shadow)"/>
+  <path d="M44 60.5L57.2 73.5L84.5 45" stroke="#FDF4B0" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="91" cy="84" r="16" fill="#5BCEBF"/>
+  <path d="M83.5 84H98.5M91 76.5V91.5" stroke="#12485E" stroke-width="4" stroke-linecap="round"/>
+</svg>
