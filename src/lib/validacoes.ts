@@ -92,7 +92,7 @@ export const usuarioAdminSchema = z.object({
   nome: z.string().trim().min(2, "Informe o nome do usuário.").max(120, "Use um nome mais curto."),
   email: z.string().trim().email("Informe um e-mail válido."),
   senha: z.string().min(10, "Use uma senha com pelo menos 10 caracteres.").optional().or(z.literal("")),
-  perfil: z.enum(["COORDENADOR", "ADMIN"]),
+  perfil: z.enum(["PROFESSOR", "COORDENADOR", "DIRETOR", "ADMIN"]),
   ativo: z.boolean().default(true)
 });
 

@@ -30,7 +30,7 @@ export function UsuarioForm({ usuario }: { usuario?: UsuarioListItem }) {
       nome: String(formData.get("nome") ?? ""),
       email: String(formData.get("email") ?? ""),
       senha: String(formData.get("senha") ?? ""),
-      perfil: String(formData.get("perfil") ?? "COORDENADOR"),
+      perfil: String(formData.get("perfil") ?? "PROFESSOR"),
       ativo: formData.get("ativo") === "on"
     };
     const response = await fetch("/api/painel/usuarios", {
@@ -68,8 +68,10 @@ export function UsuarioForm({ usuario }: { usuario?: UsuarioListItem }) {
           placeholder={usuario ? "Deixe em branco para manter" : "Mínimo de 10 caracteres"}
           required={!usuario}
         />
-        <NeuSelect label="Perfil" name="perfil" defaultValue={usuario?.perfil ?? "COORDENADOR"}>
+        <NeuSelect label="Função no corpo docente" name="perfil" defaultValue={usuario?.perfil ?? "PROFESSOR"}>
+          <option value="PROFESSOR">Professor</option>
           <option value="COORDENADOR">Coordenador</option>
+          <option value="DIRETOR">Diretor</option>
           <option value="ADMIN">Administrador</option>
         </NeuSelect>
       </div>

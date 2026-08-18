@@ -14,7 +14,7 @@ export function isAdmin(perfil?: Perfil | null) {
 }
 
 export function isCoordenadorOuAdmin(perfil?: Perfil | null) {
-  return perfil === "COORDENADOR" || perfil === "ADMIN";
+  return perfil === "PROFESSOR" || perfil === "COORDENADOR" || perfil === "DIRETOR" || perfil === "ADMIN";
 }
 
 export function exigeAdmin(pathname: string) {

@@ -57,22 +57,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ erro: authError?.message ?? "Não foi possível criar o acesso." }, { status: 400 });
     }
 
-    const usuario = await prisma.usuario.create({
-      data: {
-        authUserId: authData.user.id,
-        nome: data.nome,
-        email: data.email.toLowerCase(),
-        perfil: data.perfil,
-        ativo: data.ativo
-      },
-      select: {
-        id: true,
-        nome: true,
-        email: true,
-        perfil: true,
-        ativo: true
-      }
-    });
+    let usuario;
+
+    try {
+      usuario = await prisma.usuario.create({
+        data: {
+          authUserId: authData.user.id,
+          nome: data.nome,
+          email: data.email.toLowerCase(),
+          perfil: data.perfil,
+          ativo: data.ativo
+        },
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          perfil: true,
+          ativo: true
+        }
+      });
+    } catch (error) {
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      throw error;
+    }
 
     return NextResponse.json(usuario, { status: 201 });
   } catch (error) {

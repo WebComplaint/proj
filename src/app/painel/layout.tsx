@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/brand-logo";
-import { isCoordenadorOuAdmin } from "@/lib/permissoes";
+import { isAdmin, isCoordenadorOuAdmin } from "@/lib/permissoes";
 import { getPainelSession } from "@/lib/server-auth";
 
 export default async function PainelLayout({
@@ -29,6 +29,11 @@ export default async function PainelLayout({
           <a className="rounded-soft px-3 py-2 hover:bg-white/35" href="/painel/relatorios">
             Relatórios
           </a>
+          {isAdmin(session.user.perfil) && (
+            <a className="rounded-soft px-3 py-2 hover:bg-white/35" href="/painel/usuarios">
+              Corpo docente
+            </a>
+          )}
           <a className="rounded-soft px-3 py-2 hover:bg-white/35" href="/painel/conta">
             Conta
           </a>
