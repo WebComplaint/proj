@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Guia de apresentação — Web Complaint</title>
+  <style>
+    @page { size: A4; margin: 15mm 14mm 16mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #0d3a46; font: 10.5pt/1.45 Arial, sans-serif; background: white; }
+    h1, h2, h3 { margin: 0 0 8px; color: #12485e; page-break-after: avoid; }
+    h1 { font-size: 27pt; line-height: 1.08; }
+    h2 { margin-top: 12px; padding-bottom: 5px; border-bottom: 2px solid #5bcebf; font-size: 18pt; }
+    h3 { margin-top: 12px; font-size: 13pt; }
+    p { margin: 5px 0 9px; }
+    ul, ol { margin: 5px 0 10px; padding-left: 22px; }
+    li { margin: 3px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 13px; font-size: 9pt; page-break-inside: auto; }
+    tr { page-break-inside: avoid; }
+    th { background: #1b6b85; color: white; text-align: left; }
+    th, td { border: 1px solid #b9d7d5; padding: 6px; vertical-align: top; }
+    tr:nth-child(even) td { background: #f2f8f7; }
+    code { color: #12485e; font: 9pt Consolas, monospace; }
+    .cover { height: 255mm; display: flex; flex-direction: column; justify-content: center; text-align: center; page-break-after: always; }
+    .cover img { width: 105px; margin: 0 auto 18px; }
+    .cover .tag { display: inline-block; margin: 18px auto; padding: 8px 16px; border-radius: 20px; background: #e9f3f2; color: #1b6b85; font-weight: bold; }
+    .cover .note { margin-top: 42px; color: #3e6c79; }
+    .page { page-break-before: always; }
+    .box { margin: 10px 0; padding: 10px 12px; border-left: 5px solid #32b9be; background: #e9f3f2; border-radius: 6px; }
+    .warning { border-color: #e0a128; background: #fff8dd; }
+    .script { padding: 10px 12px; background: #12485e; color: white; border-radius: 8px; }
+    .script strong { color: #fdf4b0; }
+    .small { font-size: 8.5pt; color: #3e6c79; }
+    .qa { margin: 0 0 9px; page-break-inside: avoid; }
+    .qa b { color: #1b6b85; }
+    .flow { text-align: center; padding: 12px; background: #e9f3f2; border-radius: 8px; font-weight: bold; }
+    .footer { position: fixed; bottom: -10mm; left: 0; right: 0; text-align: center; color: #6c8e96; font-size: 8pt; }
+  </style>
+</head>
+<body>
+  <div class="footer">Web Complaint • Guia simples para apresentação do TCC</div>
+
+  <section class="cover">
+    <img src="../public/img/logo.svg" alt="Logo Web Complaint">
+    <h1>Web Complaint</h1>
+    <p style="font-size:16pt">Sistema web de denúncia e gestão de ocorrências escolares</p>
+    <span class="tag">Guia simples para apresentação do TCC</span>
+    <p>Ensino Médio Integrado ao Técnico</p>
+    <p class="note">Roteiro de fala • telas • endpoints • tecnologias • demonstração • 50 perguntas da banca</p>
+  </section>
+
+  <section>
+    <h2>1. O projeto em poucas palavras</h2>
+    <div class="script"><strong>Frase de abertura:</strong> “O Web Complaint é um canal digital seguro para estudantes registrarem situações preocupantes na escola e para a equipe autorizada organizar, analisar e acompanhar cada ocorrência.”</div>
+    <h3>Problema</h3>
+    <p>Muitos estudantes sentem medo, vergonha ou insegurança para relatar bullying, assédio, abuso, discriminação, ameaça e violência. Quando o relato é feito apenas de forma verbal, ele também pode se perder ou ficar sem acompanhamento.</p>
+    <h3>Solução</h3>
+    <p>O sistema permite enviar uma denúncia anônima ou identificada, gera um protocolo para consulta e oferece um painel restrito para a equipe escolar tratar os casos com prioridade, status, responsável e histórico.</p>
+    <h3>Públicos do sistema</h3>
+    <ul>
+      <li><b>Estudante ou denunciante:</b> registra e acompanha a denúncia, sem precisar entrar no painel.</li>
+      <li><b>Professor, coordenador e diretor:</b> acessam o painel e ajudam no tratamento das ocorrências.</li>
+      <li><b>Administrador:</b> possui as funções do painel e também gerencia usuários, categorias e relatórios.</li>
+    </ul>
+    <div class="box"><b>Importante:</b> o sistema ajuda a registrar e organizar relatos. Ele não substitui polícia, Conselho Tutelar, Disque 100, CVV ou atendimento de emergência.</div>
+
+    <h2>2. Objetivos</h2>
+    <ul>
+      <li>Oferecer um meio simples e acolhedor para registrar ocorrências escolares.</li>
+      <li>Permitir anonimato quando o denunciante não quiser se identificar.</li>
+      <li>Evitar que casos sejam esquecidos, usando status, prioridade e histórico.</li>
+      <li>Dar transparência ao denunciante por meio de um protocolo.</li>
+      <li>Restringir informações sensíveis somente à equipe autorizada.</li>
+      <li>Ajudar a gestão escolar com filtros, indicadores e relatórios.</li>
+    </ul>
+  </section>
+
+  <section class="page">
+    <h2>3. Como o sistema funciona</h2>
+    <div class="flow">Relato → Validação → Protocolo → Triagem → Tratamento → Resolução ou arquivamento</div>
+    <ol>
+      <li>O denunciante escolhe a categoria e descreve a situação.</li>
+      <li>Pode informar data, local, envolvidos e anexar provas.</li>
+      <li>Escolhe enviar anonimamente ou informar seus dados.</li>
+      <li>O sistema valida os campos, grava a ocorrência e gera um protocolo único.</li>
+      <li>A equipe acessa o painel, define prioridade, responsável e andamento.</li>
+      <li>Cada alteração fica registrada no histórico.</li>
+      <li>O denunciante consulta apenas as informações públicas usando o protocolo.</li>
+    </ol>
+    <h3>Status possíveis</h3>
+    <table><tr><th>Status</th><th>Significado simples</th></tr>
+      <tr><td>Recebida</td><td>O sistema recebeu o relato.</td></tr>
+      <tr><td>Em análise</td><td>A equipe está avaliando o caso.</td></tr>
+      <tr><td>Em andamento</td><td>Providências estão sendo tomadas.</td></tr>
+      <tr><td>Resolvida</td><td>O tratamento principal foi concluído.</td></tr>
+      <tr><td>Arquivada</td><td>O caso foi encerrado e preservado no histórico.</td></tr>
+    </table>
+    <h3>Prioridades</h3>
+    <p><b>Baixa, média, alta e urgente.</b> A prioridade ajuda a equipe a ordenar o trabalho. Ela não prova a gravidade sozinha; a avaliação humana continua necessária.</p>
+
+    <h2>4. Telas públicas</h2>
+    <table><tr><th>Rota</th><th>Tela</th><th>O que mostrar na apresentação</th></tr>
+      <tr><td><code>/</code></td><td>Início</td><td>Apresenta a proposta, os passos, o sigilo e os botões principais.</td></tr>
+      <tr><td><code>/denunciar</code></td><td>Nova denúncia</td><td>Formulário em etapas, categoria, detalhes, anexos e anonimato.</td></tr>
+      <tr><td><code>/denunciar/enviada</code></td><td>Confirmação</td><td>Mostra o protocolo gerado e orienta a guardá-lo.</td></tr>
+      <tr><td><code>/acompanhar</code></td><td>Consultar protocolo</td><td>Campo para localizar uma denúncia sem login.</td></tr>
+      <tr><td><code>/acompanhar/[protocolo]</code></td><td>Acompanhamento</td><td>Status e linha do tempo contendo somente registros públicos.</td></tr>
+      <tr><td><code>/como-funciona</code></td><td>Como funciona</td><td>Explica o fluxo com linguagem acessível.</td></tr>
+      <tr><td><code>/privacidade</code></td><td>Privacidade</td><td>Explica anonimato, dados coletados e acesso restrito.</td></tr>
+      <tr><td><code>/ajuda</code></td><td>Ajuda</td><td>Apresenta canais externos para urgência e apoio.</td></tr>
+      <tr><td><code>/design-system</code></td><td>Design system</td><td>Demonstra componentes e padrões visuais criados para o projeto.</td></tr>
+    </table>
+  </section>
+
+  <section class="page">
+    <h2>5. Login e telas do painel</h2>
+    <table><tr><th>Rota</th><th>Permissão</th><th>Função</th></tr>
+      <tr><td><code>/login</code></td><td>Equipe cadastrada</td><td>Autentica com e-mail e senha pelo Supabase Auth.</td></tr>
+      <tr><td><code>/painel</code></td><td>Equipe</td><td>Resumo com números, gráficos e casos que precisam de atenção.</td></tr>
+      <tr><td><code>/painel/denuncias</code></td><td>Equipe</td><td>Lista denúncias com busca, filtros, ordenação e paginação.</td></tr>
+      <tr><td><code>/painel/denuncias/[id]</code></td><td>Equipe</td><td>Detalhes, anexos, status, prioridade, responsável e histórico.</td></tr>
+      <tr><td><code>/painel/conta</code></td><td>Equipe</td><td>Exibe os dados da conta autenticada e permite sair.</td></tr>
+      <tr><td><code>/painel/usuarios</code></td><td>Administrador</td><td>Cadastra e atualiza professor, coordenador, diretor ou administrador.</td></tr>
+      <tr><td><code>/painel/categorias</code></td><td>Administrador</td><td>Cria e organiza categorias e prioridades padrão.</td></tr>
+      <tr><td><code>/painel/relatorios</code></td><td>Administrador</td><td>Mostra resultados filtrados e permite exportar CSV.</td></tr>
+    </table>
+    <div class="box"><b>Diferença importante:</b> tela é o que a pessoa vê. Endpoint é um endereço interno que recebe ou devolve dados para a tela.</div>
+
+    <h2>6. Todos os endpoints da API</h2>
+    <h3>Públicos</h3>
+    <table><tr><th>Método e endpoint</th><th>Entrada/saída resumida</th><th>Proteção</th></tr>
+      <tr><td><code>POST /api/denuncias</code></td><td>Recebe o relato validado, cria a denúncia e devolve o protocolo.</td><td>Validação Zod; regras de anonimato.</td></tr>
+      <tr><td><code>POST /api/upload</code></td><td>Recebe anexo e devolve os dados do arquivo.</td><td>Tipo, quantidade e tamanho limitados.</td></tr>
+      <tr><td><code>GET /api/denuncias/protocolo/[protocolo]</code></td><td>Devolve categoria, data, status e histórico público.</td><td>Limite de tentativas; não mostra notas internas.</td></tr>
+    </table>
+    <h3>Restritos ao painel</h3>
+    <table><tr><th>Método e endpoint</th><th>Função</th><th>Permissão</th></tr>
+      <tr><td><code>GET /api/painel/denuncias</code></td><td>Lista ocorrências com filtros e paginação.</td><td>Equipe</td></tr>
+      <tr><td><code>GET /api/painel/denuncias/[id]</code></td><td>Consulta o caso completo.</td><td>Equipe</td></tr>
+      <tr><td><code>PATCH /api/painel/denuncias/[id]</code></td><td>Atualiza status, prioridade ou responsável.</td><td>Equipe</td></tr>
+      <tr><td><code>POST /api/painel/denuncias/[id]/comentarios</code></td><td>Cria nota interna ou resposta pública.</td><td>Equipe</td></tr>
+      <tr><td><code>GET /api/painel/estatisticas</code></td><td>Devolve números e agrupamentos do dashboard.</td><td>Equipe</td></tr>
+      <tr><td><code>GET /api/painel/relatorios/export</code></td><td>Exporta dados filtrados em CSV.</td><td>Administrador</td></tr>
+      <tr><td><code>GET /api/painel/usuarios</code></td><td>Lista usuários do corpo docente.</td><td>Administrador</td></tr>
+      <tr><td><code>POST /api/painel/usuarios</code></td><td>Cria conta de autenticação e perfil.</td><td>Administrador</td></tr>
+      <tr><td><code>PATCH /api/painel/usuarios</code></td><td>Atualiza função, senha, e-mail ou situação.</td><td>Administrador</td></tr>
+      <tr><td><code>GET /api/painel/categorias</code></td><td>Lista categorias.</td><td>Administrador</td></tr>
+      <tr><td><code>POST /api/painel/categorias</code></td><td>Cria categoria.</td><td>Administrador</td></tr>
+      <tr><td><code>PATCH /api/painel/categorias</code></td><td>Atualiza ou desativa categoria.</td><td>Administrador</td></tr>
+    </table>
+  </section>
+
+  <section class="page">
+    <h2>7. Tecnologias explicadas de forma simples</h2>
+    <table><tr><th>Tecnologia</th><th>Explicação simples</th><th>Uso no projeto</th></tr>
+      <tr><td>HTML e CSS</td><td>Estrutura e aparência das páginas.</td><td>Conteúdo, cores, espaçamento, responsividade e impressão visual.</td></tr>
+      <tr><td>JavaScript</td><td>Linguagem que dá comportamento ao site.</td><td>Formulários, ações, comunicação com APIs.</td></tr>
+      <tr><td>TypeScript</td><td>JavaScript com verificação de tipos.</td><td>Ajuda a detectar erros antes da publicação.</td></tr>
+      <tr><td>React</td><td>Biblioteca para criar interfaces por componentes.</td><td>Botões, campos, cartões, formulários e telas reutilizáveis.</td></tr>
+      <tr><td>Next.js</td><td>Estrutura que organiza frontend e backend no mesmo projeto.</td><td>Rotas, páginas, endpoints, renderização e build.</td></tr>
+      <tr><td>Tailwind CSS</td><td>Classes prontas para escrever estilos com rapidez e padrão.</td><td>Layout responsivo e design visual.</td></tr>
+      <tr><td>Zod</td><td>Validador de dados.</td><td>Confere e-mail, senha, descrição, protocolo e filtros.</td></tr>
+      <tr><td>PostgreSQL</td><td>Banco de dados relacional.</td><td>Guarda usuários, categorias, denúncias, anexos e históricos.</td></tr>
+      <tr><td>Prisma</td><td>Ponte segura entre o código e o banco.</td><td>Consultas, relacionamentos e tipos das tabelas.</td></tr>
+      <tr><td>Supabase Auth</td><td>Serviço de autenticação.</td><td>Login, senhas protegidas e sessão dos usuários.</td></tr>
+      <tr><td>Supabase</td><td>Plataforma que hospeda PostgreSQL e autenticação.</td><td>Banco e contas da equipe.</td></tr>
+      <tr><td>Vercel</td><td>Plataforma de hospedagem web.</td><td>Publica automaticamente o projeto conectado ao GitHub.</td></tr>
+      <tr><td>Git e GitHub</td><td>Histórico e armazenamento do código.</td><td>Commits, versões, colaboração e integração com deploy.</td></tr>
+    </table>
+    <h3>Arquitetura em uma frase</h3>
+    <div class="flow">Navegador → Next.js/API → validação e permissão → Prisma/Supabase → PostgreSQL</div>
+
+    <h2>8. Dados armazenados</h2>
+    <table><tr><th>Entidade</th><th>O que representa</th></tr>
+      <tr><td>Usuário</td><td>Pessoa autorizada, e-mail, nome, função e situação ativa/inativa.</td></tr>
+      <tr><td>Categoria</td><td>Tipo de ocorrência e sua prioridade padrão.</td></tr>
+      <tr><td>Denúncia</td><td>Relato, protocolo, anonimato, status, prioridade e responsável.</td></tr>
+      <tr><td>Anexo</td><td>Referência do arquivo enviado como evidência.</td></tr>
+      <tr><td>Histórico</td><td>Mudanças e comentários feitos durante o tratamento.</td></tr>
+    </table>
+    <p><b>Relacionamentos:</b> uma categoria pode ter várias denúncias; uma denúncia pode ter vários anexos e registros históricos; um usuário pode ser responsável por várias denúncias.</p>
+  </section>
+
+  <section class="page">
+    <h2>9. Segurança, privacidade e ética</h2>
+    <ul>
+      <li>O painel exige login e verifica a sessão no servidor.</li>
+      <li>Rotas administrativas verificam se a pessoa realmente é administradora.</li>
+      <li>Senhas não são guardadas em texto puro; ficam transformadas por hash.</li>
+      <li>Denúncia anônima não deve armazenar nome, e-mail ou telefone.</li>
+      <li>Notas internas nunca aparecem na consulta pública.</li>
+      <li>O protocolo é aleatório para dificultar adivinhação.</li>
+      <li>A consulta pública possui limite de tentativas.</li>
+      <li>Usuários são desativados, preservando o histórico de suas ações.</li>
+      <li>Denúncias são arquivadas em vez de apagadas.</li>
+      <li>A interface lembra que emergências devem ser encaminhadas aos serviços adequados.</li>
+    </ul>
+    <div class="box warning"><b>Limite atual importante para falar com honestidade:</b> um sistema real exige política institucional, treinamento da equipe, plano de resposta, revisão jurídica/LGPD, backups, monitoramento e armazenamento persistente seguro para anexos. Tecnologia sozinha não resolve o problema humano.</div>
+
+    <h2>10. Pontos fortes e melhorias futuras</h2>
+    <h3>Pontos fortes</h3>
+    <ul>
+      <li>Fluxo completo: denúncia, protocolo, painel, tratamento e relatório.</li>
+      <li>Separação entre conteúdo público e interno.</li>
+      <li>Organização por prioridade, status, responsável e categoria.</li>
+      <li>Interface responsiva, acessível e com linguagem acolhedora.</li>
+      <li>Perfis diferentes para professor, coordenador, diretor e administrador.</li>
+    </ul>
+    <h3>Possíveis evoluções</h3>
+    <ul>
+      <li>Armazenar anexos em serviço próprio, com antivírus e acesso temporário.</li>
+      <li>Enviar notificações por e-mail com domínio oficial da escola.</li>
+      <li>Adicionar autenticação em dois fatores para administradores.</li>
+      <li>Criar auditoria mais detalhada, backups e política de retenção.</li>
+      <li>Realizar testes com estudantes e profissionais da educação.</li>
+      <li>Adicionar painel de acessibilidade e tradução para Libras.</li>
+    </ul>
+
+    <h2>11. Roteiro de demonstração (5 a 7 minutos)</h2>
+    <ol>
+      <li><b>Início (30 s):</b> explique problema e solução.</li>
+      <li><b>Denúncia (2 min):</b> selecione categoria, escreva um relato fictício, mostre anonimato e envie.</li>
+      <li><b>Protocolo (30 s):</b> copie o código e explique que ele identifica o caso sem expor a pessoa.</li>
+      <li><b>Painel (2 min):</b> entre, localize o caso, altere prioridade/status e registre comentário público.</li>
+      <li><b>Acompanhamento (1 min):</b> consulte o protocolo e mostre que somente a parte pública aparece.</li>
+      <li><b>Gestão (1 min):</b> mostre usuários, categorias e relatório.</li>
+    </ol>
+    <div class="box"><b>Prepare antes:</b> conexão, duas abas abertas, login já testado, um relato fictício, protocolo reserva e captura de tela caso a internet falhe.</div>
+  </section>
+
+  <section class="page">
+    <h2>12. Sugestão de divisão do grupo</h2>
+    <table><tr><th>Integrante</th><th>Parte sugerida</th><th>Tempo</th></tr>
+      <tr><td>1</td><td>Problema, público, objetivo e justificativa.</td><td>2 min</td></tr>
+      <tr><td>2</td><td>Fluxo público e demonstração da denúncia.</td><td>3 min</td></tr>
+      <tr><td>3</td><td>Painel, gestão de ocorrências e perfis.</td><td>3 min</td></tr>
+      <tr><td>4</td><td>Tecnologias, banco, segurança, limites e conclusão.</td><td>3 min</td></tr>
+    </table>
+    <h3>Modelo de abertura</h3>
+    <div class="script">“Bom dia. Nosso projeto se chama <strong>Web Complaint</strong>. Ele surgiu da necessidade de oferecer aos estudantes um meio mais seguro para relatar situações escolares preocupantes. A solução une um formulário simples, acompanhamento por protocolo e um painel restrito para a equipe escolar.”</div>
+    <h3>Modelo de conclusão</h3>
+    <div class="script">“Concluímos que a tecnologia pode melhorar o registro e a organização das ocorrências, desde que seja acompanhada por pessoas preparadas e regras responsáveis. O Web Complaint não substitui o cuidado humano: ele oferece uma ferramenta para que o relato chegue à equipe certa e possa ser acompanhado.”</div>
+
+    <h2>13. Dicas para uma apresentação digna</h2>
+    <ul>
+      <li>Não leiam slides inteiros; expliquem com suas próprias palavras.</li>
+      <li>Todos devem saber explicar problema, solução e fluxo básico.</li>
+      <li>Não inventem resultados de pesquisa ou implantação que não aconteceram.</li>
+      <li>Se não souberem algo, respondam: “Não implementamos nesta versão, mas pensamos nesta evolução...”</li>
+      <li>Usem um caso totalmente fictício na demonstração.</li>
+      <li>Nunca exponham senha, chave do banco ou dado real de estudante.</li>
+      <li>Ensaiem com cronômetro e treinem a troca entre integrantes.</li>
+      <li>Expliquem decisões, não somente nomes de tecnologias.</li>
+    </ul>
+  </section>
+
+  <section class="page">
+    <h2>14. 50 perguntas possíveis da banca — parte 1</h2>
+    <div class="qa"><b>1. Por que vocês escolheram esse tema?</b><br>Porque estudantes podem ter dificuldade para relatar situações sensíveis, e a escola precisa organizar e acompanhar os casos.</div>
+    <div class="qa"><b>2. Qual problema o sistema resolve?</b><br>Facilita o registro, reduz a perda de informações e organiza o tratamento das ocorrências.</div>
+    <div class="qa"><b>3. Quem é o público-alvo?</b><br>Estudantes e comunidade escolar como denunciantes, além da equipe autorizada que trata os casos.</div>
+    <div class="qa"><b>4. O sistema substitui uma denúncia policial?</b><br>Não. Ele é um canal escolar e orienta procurar os serviços competentes em emergências.</div>
+    <div class="qa"><b>5. Qual é o diferencial do projeto?</b><br>Ele reúne anonimato, protocolo, gestão de prioridade, histórico e painel restrito no mesmo fluxo.</div>
+    <div class="qa"><b>6. É possível denunciar anonimamente?</b><br>Sim. Nesse caso, o sistema não deve guardar nome, e-mail ou telefone do denunciante.</div>
+    <div class="qa"><b>7. Como a pessoa acompanha uma denúncia anônima?</b><br>Por um protocolo único gerado no envio.</div>
+    <div class="qa"><b>8. O que acontece se perder o protocolo?</b><br>Por segurança, não existe busca por dados pessoais em denúncia anônima; sem o protocolo, o acompanhamento fica inviável.</div>
+    <div class="qa"><b>9. Por que o protocolo não é sequencial?</b><br>Para dificultar que alguém tente adivinhar códigos de outras denúncias.</div>
+    <div class="qa"><b>10. Como vocês definem a gravidade?</b><br>Usamos prioridades baixa, média, alta e urgente, com padrão por categoria e possibilidade de revisão humana.</div>
+    <div class="qa"><b>11. Quem pode acessar o painel?</b><br>Somente usuários ativos cadastrados como professor, coordenador, diretor ou administrador.</div>
+    <div class="qa"><b>12. Todos possuem a mesma permissão?</b><br>Não. Funções administrativas, como usuários e categorias, ficam restritas ao administrador.</div>
+    <div class="qa"><b>13. Como as senhas são protegidas?</b><br>O Supabase Auth armazena hash da senha, e não a senha em texto puro.</div>
+    <div class="qa"><b>14. O que impede alguém de abrir a URL do painel?</b><br>O middleware e os endpoints conferem sessão, usuário ativo e permissão no servidor.</div>
+    <div class="qa"><b>15. O front-end sozinho garante segurança?</b><br>Não. Por isso as APIs também verificam autenticação e autorização.</div>
+    <div class="qa"><b>16. O que é LGPD?</b><br>É a lei brasileira que define regras para tratamento de dados pessoais. O projeto reduz coleta e separa informações públicas e internas.</div>
+    <div class="qa"><b>17. O sistema já está totalmente adequado à LGPD?</b><br>É um protótipo acadêmico com boas práticas, mas uso real exige análise jurídica, política de retenção e processos institucionais.</div>
+  </section>
+
+  <section class="page">
+    <h2>50 perguntas possíveis — parte 2</h2>
+    <div class="qa"><b>18. Quais dados são armazenados?</b><br>Usuários, categorias, relato, protocolo, status, prioridade, anexos e histórico; dados pessoais somente quando a denúncia é identificada.</div>
+    <div class="qa"><b>19. Vocês armazenam IP?</b><br>O projeto não persiste IP na denúncia; ele pode ser usado temporariamente para limitar tentativas de consulta.</div>
+    <div class="qa"><b>20. Notas internas aparecem ao denunciante?</b><br>Não. Apenas registros marcados como públicos aparecem no acompanhamento.</div>
+    <div class="qa"><b>21. Por que não apagar denúncias?</b><br>Arquivar preserva histórico, responsabilidade e possibilidade de auditoria.</div>
+    <div class="qa"><b>22. O que é um endpoint?</b><br>É um endereço do backend usado pelas telas para enviar ou buscar dados.</div>
+    <div class="qa"><b>23. Qual a diferença entre GET, POST e PATCH?</b><br>GET consulta; POST cria; PATCH altera parte de um registro.</div>
+    <div class="qa"><b>24. Por que usar Next.js?</b><br>Porque organiza telas e backend no mesmo projeto, possui bom suporte a TypeScript e funciona bem na Vercel.</div>
+    <div class="qa"><b>25. Por que usar React?</b><br>Para criar a interface com componentes reutilizáveis e estados interativos.</div>
+    <div class="qa"><b>26. Por que usar TypeScript?</b><br>Para detectar incompatibilidades de dados durante o desenvolvimento e facilitar manutenção.</div>
+    <div class="qa"><b>27. O que é Prisma?</b><br>É a camada que transforma consultas do código em operações no PostgreSQL com tipos e relacionamentos.</div>
+    <div class="qa"><b>28. Por que PostgreSQL?</b><br>É um banco relacional confiável, adequado a dados estruturados e relacionamentos do sistema.</div>
+    <div class="qa"><b>29. O que é Supabase?</b><br>É a plataforma usada para hospedar o PostgreSQL e fornecer autenticação.</div>
+    <div class="qa"><b>30. O que é Vercel?</b><br>É a hospedagem da aplicação Next.js e realiza deploy automático a partir do GitHub.</div>
+    <div class="qa"><b>31. O que é GitHub?</b><br>É onde o código e seu histórico de versões ficam armazenados.</div>
+    <div class="qa"><b>32. Como os dados do formulário são validados?</b><br>Com regras no cliente para orientar e no servidor com Zod para garantir segurança.</div>
+    <div class="qa"><b>33. O que acontece com dados inválidos?</b><br>A API rejeita a requisição e devolve uma mensagem clara para a interface.</div>
+    <div class="qa"><b>34. Como o banco está organizado?</b><br>Em tabelas relacionadas: usuários, categorias, denúncias, anexos e históricos.</div>
+  </section>
+
+  <section class="page">
+    <h2>50 perguntas possíveis — parte 3</h2>
+    <div class="qa"><b>35. O que é chave estrangeira?</b><br>É uma ligação entre registros, como uma denúncia ligada à sua categoria e ao responsável.</div>
+    <div class="qa"><b>36. O que é responsividade?</b><br>É a adaptação da interface para celular, tablet e computador.</div>
+    <div class="qa"><b>37. O sistema é acessível?</b><br>Ele possui labels, foco visível, contraste, textos junto às cores e áreas de toque maiores; ainda pode evoluir com testes reais.</div>
+    <div class="qa"><b>38. Por que o formulário foi dividido em etapas?</b><br>Para reduzir a quantidade de informação por tela e diminuir a carga emocional e cognitiva.</div>
+    <div class="qa"><b>39. Como anexos são protegidos?</b><br>Há validação de tipo e tamanho. Em produção real, ainda recomendamos storage privado, antivírus e links temporários.</div>
+    <div class="qa"><b>40. O que acontece se duas pessoas alterarem o mesmo caso?</b><br>As mudanças ficam registradas no histórico; uma evolução futura pode adicionar controle de concorrência e avisos em tempo real.</div>
+    <div class="qa"><b>41. O sistema envia e-mail?</b><br>A estrutura prevê notificações para denúncia identificada; o envio real depende da configuração de um serviço de e-mail.</div>
+    <div class="qa"><b>42. Como vocês testaram?</b><br>Foram feitas validações de TypeScript, build, banco, autenticação, rotas e testes manuais dos fluxos principais.</div>
+    <div class="qa"><b>43. Qual foi a maior dificuldade?</b><br>Integrar autenticação, banco e permissões de forma que o painel funcione sem expor operações administrativas.</div>
+    <div class="qa"><b>44. O que vocês aprenderam?</b><br>Integração entre frontend e backend, banco relacional, autenticação, deploy, versionamento e importância da privacidade.</div>
+    <div class="qa"><b>45. O projeto pode atender várias escolas?</b><br>A versão atual representa uma escola. Para várias escolas seria necessário adicionar instituição e isolamento de dados por escola.</div>
+    <div class="qa"><b>46. O que fariam com mais tempo?</b><br>Testes automatizados, storage privado, e-mails, dois fatores, auditoria, backups e pesquisa com usuários.</div>
+    <div class="qa"><b>47. Como evitar denúncias falsas?</b><br>Não há solução automática perfeita. A equipe deve analisar evidências e contexto sem tratar todo relato como prova definitiva.</div>
+    <div class="qa"><b>48. A inteligência artificial decide os casos?</b><br>Não. O sistema atual não usa IA para decidir gravidade ou culpa; decisões sensíveis permanecem humanas.</div>
+    <div class="qa"><b>49. O projeto está pronto para uso real?</b><br>É um protótipo funcional. Uso real exige governança escolar, validação jurídica, infraestrutura de arquivos, treinamento e monitoramento.</div>
+    <div class="qa"><b>50. Qual é a principal conclusão do trabalho?</b><br>Uma ferramenta bem planejada pode facilitar o pedido de ajuda e organizar a resposta, mas precisa trabalhar junto com pessoas e políticas responsáveis.</div>
+
+    <h2>15. Checklist final do grupo</h2>
+    <ul>
+      <li>☐ Todos conseguem explicar o projeto em 30 segundos.</li>
+      <li>☐ Cada integrante sabe sua fala e a fala anterior.</li>
+      <li>☐ Login, denúncia e protocolo foram testados no dia.</li>
+      <li>☐ Caso e dados usados na demonstração são fictícios.</li>
+      <li>☐ Senhas e variáveis secretas não aparecem na tela.</li>
+      <li>☐ Existe plano B com capturas ou vídeo curto.</li>
+      <li>☐ O tempo foi ensaiado pelo menos duas vezes.</li>
+      <li>☐ O grupo sabe citar limites e melhorias sem vergonha.</li>
+    </ul>
+    <div class="script"><strong>Mensagem para lembrar:</strong> vocês não precisam provar que o sistema é perfeito. Precisam demonstrar que entenderam o problema, construíram uma solução coerente, sabem explicar as decisões e reconhecem os limites.</div>
+  </section>
+</body>
+</html>
