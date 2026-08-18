@@ -21,15 +21,30 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://proj-web-complaint.vercel.app"),
   title: {
     default: "Web Complaint",
     template: "%s | Web Complaint"
   },
   description: "Canal acolhedor para registrar e acompanhar denúncias escolares.",
   icons: {
-    icon: "/icon.svg",
-    shortcut: "/icon.svg",
-    apple: "/icon.svg"
+    icon: "/img/logo.svg",
+    shortcut: "/img/logo.svg",
+    apple: "/img/logo.svg"
+  },
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    siteName: "Web Complaint",
+    title: "Web Complaint",
+    description: "Canal acolhedor para registrar e acompanhar denúncias escolares.",
+    images: [{ url: "/img/logo.svg", width: 128, height: 128, alt: "Logo do Web Complaint" }]
+  },
+  twitter: {
+    card: "summary",
+    title: "Web Complaint",
+    description: "Canal acolhedor para registrar e acompanhar denúncias escolares.",
+    images: ["/img/logo.svg"]
   }
 };
 
