@@ -4,7 +4,14 @@ import { formatZodError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/server-auth";
 import { usuarioAdminSchema } from "@/lib/validacoes";
-import { createAuthUser, deleteAuthUser, updateAuthUser } from "@/lib/supabase/admin";
+
+type UsuarioResult = {
+  id: string;
+  nome: string;
+  email: string;
+  perfil: "PROFESSOR" | "COORDENADOR" | "DIRETOR" | "ADMIN";
+  ativo: boolean;
+};
 
 export async function GET() {
   const auth = await requireAdminSession();
@@ -46,31 +53,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const authUser = await createAuthUser(data.email.toLowerCase(), data.senha);
-
-    let usuario;
-
-    try {
-      usuario = await prisma.usuario.create({
-        data: {
-          authUserId: authUser.id,
-          nome: data.nome,
-          email: data.email.toLowerCase(),
-          perfil: data.perfil,
-          ativo: data.ativo
-        },
-        select: {
-          id: true,
-          nome: true,
-          email: true,
-          perfil: true,
-          ativo: true
-        }
-      });
-    } catch (error) {
-      await deleteAuthUser(authUser.id);
-      throw error;
-    }
+    const [usuario] = await prisma.$queryRaw<UsuarioResult[]>`
+      SELECT * FROM app_private.create_staff_user(
+        ${data.nome},
+        ${data.email.toLowerCase()},
+        ${data.senha},
+        CAST(${data.perfil} AS "Perfil"),
+        ${data.ativo}
+      )
+    `;
 
     return NextResponse.json(usuario, { status: 201 });
   } catch (error) {
@@ -95,29 +86,16 @@ export async function PATCH(request: Request) {
 
   try {
     const data = usuarioAdminSchema.extend({ id: usuarioAdminSchema.shape.id.unwrap() }).parse(await request.json());
-    const atual = await prisma.usuario.findUniqueOrThrow({ where: { id: data.id } });
-    await updateAuthUser(atual.authUserId, {
-      email: data.email.toLowerCase(),
-      password: data.senha || undefined,
-      ativo: data.ativo
-    });
-
-    const usuario = await prisma.usuario.update({
-      where: { id: data.id },
-      data: {
-        nome: data.nome,
-        email: data.email.toLowerCase(),
-        perfil: data.perfil,
-        ativo: data.ativo
-      },
-      select: {
-        id: true,
-        nome: true,
-        email: true,
-        perfil: true,
-        ativo: true
-      }
-    });
+    const [usuario] = await prisma.$queryRaw<UsuarioResult[]>`
+      SELECT * FROM app_private.update_staff_user(
+        ${data.id},
+        ${data.nome},
+        ${data.email.toLowerCase()},
+        ${data.senha || ""},
+        CAST(${data.perfil} AS "Perfil"),
+        ${data.ativo}
+      )
+    `;
 
     return NextResponse.json(usuario);
   } catch (error) {
