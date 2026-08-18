@@ -4,7 +4,7 @@ import { formatZodError } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/server-auth";
 import { usuarioAdminSchema } from "@/lib/validacoes";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createAuthUser, deleteAuthUser, updateAuthUser } from "@/lib/supabase/admin";
 
 export async function GET() {
   const auth = await requireAdminSession();
@@ -46,23 +46,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = createSupabaseAdminClient();
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email: data.email.toLowerCase(),
-      password: data.senha,
-      email_confirm: true
-    });
-
-    if (authError || !authData.user) {
-      return NextResponse.json({ erro: authError?.message ?? "Não foi possível criar o acesso." }, { status: 400 });
-    }
+    const authUser = await createAuthUser(data.email.toLowerCase(), data.senha);
 
     let usuario;
 
     try {
       usuario = await prisma.usuario.create({
         data: {
-          authUserId: authData.user.id,
+          authUserId: authUser.id,
           nome: data.nome,
           email: data.email.toLowerCase(),
           perfil: data.perfil,
@@ -77,7 +68,7 @@ export async function POST(request: Request) {
         }
       });
     } catch (error) {
-      await supabase.auth.admin.deleteUser(authData.user.id);
+      await deleteAuthUser(authUser.id);
       throw error;
     }
 
@@ -85,6 +76,10 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(formatZodError(error), { status: 400 });
+    }
+
+    if (error instanceof Error) {
+      return NextResponse.json({ erro: error.message }, { status: 400 });
     }
 
     return NextResponse.json({ erro: "Não foi possível criar o usuário agora." }, { status: 500 });
@@ -101,16 +96,11 @@ export async function PATCH(request: Request) {
   try {
     const data = usuarioAdminSchema.extend({ id: usuarioAdminSchema.shape.id.unwrap() }).parse(await request.json());
     const atual = await prisma.usuario.findUniqueOrThrow({ where: { id: data.id } });
-    const supabase = createSupabaseAdminClient();
-    const { error: authError } = await supabase.auth.admin.updateUserById(atual.authUserId, {
+    await updateAuthUser(atual.authUserId, {
       email: data.email.toLowerCase(),
       password: data.senha || undefined,
-      ban_duration: data.ativo ? "none" : "876000h"
+      ativo: data.ativo
     });
-
-    if (authError) {
-      return NextResponse.json({ erro: authError.message }, { status: 400 });
-    }
 
     const usuario = await prisma.usuario.update({
       where: { id: data.id },
@@ -133,6 +123,10 @@ export async function PATCH(request: Request) {
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(formatZodError(error), { status: 400 });
+    }
+
+    if (error instanceof Error) {
+      return NextResponse.json({ erro: error.message }, { status: 400 });
     }
 
     return NextResponse.json({ erro: "Não foi possível atualizar o usuário agora." }, { status: 500 });
