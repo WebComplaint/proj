@@ -1,3 +1,19 @@
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * E a LISTA de denuncias, com filtros e paginacao.
+ *
+ * A equipe pode filtrar por protocolo, status, categoria, prioridade, tipo
+ * (anonima ou identificada), responsavel e periodo de datas. Os filtros
+ * escolhidos ficam gravados no proprio endereco da pagina, entao o link
+ * pode ser copiado e enviado para um colega ja filtrado.
+ *
+ * A lista mostra 20 casos por vez. Cada caso parado ha mais de 48 horas
+ * ganha a etiqueta vermelha "Triagem atrasada".
+ *
+ * Para a apresentacao: e a tela de trabalho do dia a dia da equipe.
+ */
+
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { EmptyState, NeuCard, PrioridadeBadge, StatusBadge } from "@/components/ui";
@@ -12,7 +28,13 @@ type PainelDenunciasPageProps = {
 };
 
 export default async function PainelDenunciasPage({ searchParams = {} }: PainelDenunciasPageProps) {
+  // BLOCO 1 - Le e confere os filtros que estao no endereco da pagina.
+  // Guardar os filtros na URL, e nao na memoria da tela, tem uma vantagem
+  // pratica: a equipe copia o link ja filtrado e envia para um colega.
   const query = painelDenunciasQuerySchema.parse(flattenSearchParams(searchParams));
+
+  // BLOCO 2 - Monta o filtro de busca. Cada "undefined" significa "nao filtre
+  // por este campo", ou seja, os filtros deixados em branco sao ignorados.
   const where: Prisma.DenunciaWhereInput = {
     status: query.status,
     prioridade: query.prioridade,
@@ -28,7 +50,15 @@ export default async function PainelDenunciasPage({ searchParams = {} }: PainelD
           }
         : undefined
   };
+  // Quantos registros pular para chegar na pagina pedida.
   const skip = (query.pagina - 1) * PAGE_SIZE;
+
+  // BLOCO 3 - Faz as quatro consultas ao mesmo tempo:
+  //   1. o total de casos que combinam com os filtros;
+  //   2. os 20 casos desta pagina;
+  //   3. as categorias ativas, para preencher o filtro de categoria;
+  //   4. os usuarios ativos, para preencher o filtro de responsavel.
+  // As duas ultimas alimentam as listas suspensas do formulario de filtros.
   const [total, denuncias, categorias, usuarios] = await Promise.all([
     prisma.denuncia.count({ where }),
     prisma.denuncia.findMany({
@@ -66,6 +96,11 @@ export default async function PainelDenunciasPage({ searchParams = {} }: PainelD
       </section>
 
       <NeuCard title="Filtros" description="Use um ou mais campos para encontrar denúncias específicas.">
+        {/* BLOCO 4 - O FORMULARIO DE FILTROS.
+            Note que ele nao tem "action" nem codigo de envio: e um formulario
+            comum do navegador. Ao clicar em "Aplicar filtros", os campos viram
+            parametros no endereco e a pagina recarrega ja filtrada.
+            Simples, funciona sem JavaScript e deixa o link compartilhavel. */}
         <form className="grid gap-4 lg:grid-cols-4">
           <label className="grid gap-2 text-sm font-bold text-text-secondary">
             Protocolo
@@ -110,6 +145,8 @@ export default async function PainelDenunciasPage({ searchParams = {} }: PainelD
       ) : (
         <section className="grid gap-3">
           {denuncias.map((denuncia) => {
+            // Para cada caso da lista, verifica se ele passou do prazo de
+            // 48 horas em triagem. Se sim, ganha a etiqueta vermelha abaixo.
             const atrasada = isTriagemAtrasada(denuncia.status, denuncia.criadoEm);
 
             return (
@@ -153,6 +190,8 @@ export default async function PainelDenunciasPage({ searchParams = {} }: PainelD
   );
 }
 
+// BLOCO 5 - Um molde de lista suspensa reaproveitado por todos os filtros.
+// Cada um comeca com a opcao "Todos", que significa "nao filtrar por isso".
 function SelectFilter({
   label,
   name,
@@ -179,6 +218,11 @@ function SelectFilter({
   );
 }
 
+// BLOCO 6 - O botao de pagina anterior e proxima.
+// Ele reconstroi o endereco mantendo TODOS os filtros ativos e trocando so o
+// numero da pagina. Sem esse cuidado, ir para a pagina 2 perderia os filtros
+// e a equipe voltaria para a lista completa.
+// Na primeira ou na ultima pagina, o botao vira texto cinza sem link.
 function PaginationLink({
   disabled,
   label,
@@ -215,6 +259,10 @@ function PaginationLink({
   );
 }
 
+// BLOCO 7 - Ajuste tecnico dos filtros do endereco.
+// Um mesmo filtro pode aparecer repetido na URL, e nesse caso o Next.js
+// entrega uma lista. Aqui o sistema fica com o primeiro valor, para que a
+// conferencia dos filtros receba sempre um texto simples.
 function flattenSearchParams(searchParams: Record<string, string | string[] | undefined>) {
   return Object.fromEntries(
     Object.entries(searchParams).map(([key, value]) => [key, Array.isArray(value) ? value[0] : value])

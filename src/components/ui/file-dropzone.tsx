@@ -1,5 +1,18 @@
 "use client";
 
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * E a area de anexos, onde a pessoa arrasta arquivos ou toca para escolher
+ * no celular.
+ *
+ * Os dois caminhos existem de proposito: arrastar funciona bem no
+ * computador, mas nao existe no celular, onde a maioria dos alunos vai usar
+ * o sistema.
+ *
+ * Para a apresentacao: e a entrada de provas da denuncia.
+ */
+
 import type { InputHTMLAttributes } from "react";
 import { useId, useState } from "react";
 import { cn } from "@/lib/cn";
@@ -11,8 +24,11 @@ type FileDropzoneProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
 };
 
 export function FileDropzone({ label, files = [], error, className, id, ...props }: FileDropzoneProps) {
+  // BLOCO 1 - Cria um identificador unico para ligar o titulo ao campo.
   const generatedId = useId();
   const inputId = id ?? generatedId;
+
+  // Guarda se ha um arquivo sendo arrastado por cima da area agora.
   const [dragging, setDragging] = useState(false);
 
   return (
@@ -27,14 +43,25 @@ export function FileDropzone({ label, files = [], error, className, id, ...props
           error && "border-danger-600",
           className
         )}
+        // BLOCO 2 - Reacoes ao arrastar um arquivo.
+        // Entrou na area: destaca a borda. Saiu: volta ao normal.
+        // O preventDefault no onDragOver e obrigatorio: sem ele, o navegador
+        // abriria o arquivo em vez de deixar a pagina recebe-lo.
         onDragEnter={() => setDragging(true)}
         onDragLeave={() => setDragging(false)}
         onDragOver={(event) => event.preventDefault()}
         onDrop={() => setDragging(false)}
       >
+        {/* BLOCO 3 - O campo de arquivo de verdade fica escondido.
+            O "sr-only" o esconde dos olhos mas o mantem para leitores de tela
+            e para o teclado. O visual bonito e desenhado em volta dele, sem
+            perder a acessibilidade do campo original do navegador. */}
         <input id={inputId} type="file" className="sr-only" aria-invalid={Boolean(error)} {...props} />
         <p className="font-bold text-text-primary">Arraste arquivos aqui</p>
         <p className="mt-1 text-sm text-text-secondary">ou toque para selecionar no dispositivo</p>
+        {/* O botao "Selecionar arquivo" existe porque arrastar nao funciona
+            no celular, onde a maioria dos alunos vai usar o sistema. Os dois
+            caminhos levam ao mesmo campo escondido acima. */}
         <label className="btn-secondary mt-4 inline-flex cursor-pointer items-center justify-center px-4 py-3" htmlFor={inputId}>
           Selecionar arquivo
         </label>

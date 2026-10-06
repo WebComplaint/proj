@@ -1,5 +1,24 @@
 "use client";
 
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * Sao os dois formularios de acao da tela de detalhe de uma denuncia:
+ *
+ *   CaseActions -> altera status, prioridade e responsavel do caso.
+ *   CommentForm -> registra um comentario no historico.
+ *
+ * No CommentForm, os dois botoes no topo mudam o DESTINO da mensagem:
+ * "Nota interna" fica so com a equipe, "Resposta ao denunciante" aparece na
+ * consulta publica e dispara e-mail.
+ *
+ * Por isso, logo abaixo dos botoes, o sistema escreve em texto o que vai
+ * acontecer. Escolher errado aqui significaria expor uma nota interna a
+ * quem denunciou, entao a interface avisa antes, e nao depois.
+ *
+ * Para a apresentacao: e onde a equipe efetivamente trabalha o caso.
+ */
+
 import type { Prioridade, StatusDenuncia } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -26,6 +45,9 @@ export function CaseActions({
   responsavelId,
   responsaveis
 }: CaseActionsProps) {
+  // BLOCO 1 - A memoria do formulario ja comeca com a situacao atual do caso.
+  // Por isso os campos aparecem preenchidos com o status e a prioridade que a
+  // denuncia tem hoje, e nao em branco.
   const router = useRouter();
   const [nextStatus, setNextStatus] = useState<StatusDenuncia>(status);
   const [nextPrioridade, setNextPrioridade] = useState<Prioridade>(prioridade);
@@ -34,11 +56,14 @@ export function CaseActions({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // BLOCO 2 - O que acontece ao clicar em "Salvar alteracoes".
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setLoading(true);
 
+    // Envia as tres mudancas de uma vez para a rota da denuncia.
+    // PATCH significa "altere apenas estes campos", e nao "substitua o caso".
     const response = await fetch(`/api/painel/denuncias/${denunciaId}`, {
       method: "PATCH",
       headers: {
@@ -53,12 +78,17 @@ export function CaseActions({
     });
     const result = await response.json();
 
+    // O servidor pode recusar. O caso mais comum e a mudanca de status nao
+    // permitida pela esteira do processo, e a mensagem dele explica isso.
     if (!response.ok) {
       setError(result.erro ?? "Não foi possível salvar as alterações.");
       setLoading(false);
       return;
     }
 
+    // Deu certo: limpa o comentario e manda a pagina buscar os dados de novo.
+    // O refresh e o que faz a linha do tempo mostrar a mudanca recem-feita,
+    // sem a pessoa precisar recarregar a tela na mao.
     setComentarioStatus("");
     setLoading(false);
     router.refresh();
@@ -108,6 +138,9 @@ export function CaseActions({
           </option>
         ))}
       </NeuSelect>
+      {/* Este comentario vai para a linha do tempo PUBLICA junto com a
+          mudanca de status, e a pessoa que denunciou consegue le-lo ao
+          consultar o protocolo. O rotulo do campo avisa isso claramente. */}
       <NeuTextarea
         label="Comentário público da mudança"
         name="comentario-status"
@@ -122,8 +155,15 @@ export function CaseActions({
   );
 }
 
+// ============================================================
+// SEGUNDO FORMULARIO: REGISTRAR COMENTARIO
+// ============================================================
 export function CommentForm({ denunciaId }: { denunciaId: string }) {
   const router = useRouter();
+
+  // O modo comeca em "interna", a opcao mais segura das duas.
+  // Se a pessoa se distrair e nao escolher nada, a mensagem fica com a equipe
+  // em vez de ir para quem denunciou. O padrao protege contra o descuido.
   const [mode, setMode] = useState<"internal" | "public">("internal");
   const [comentario, setComentario] = useState("");
   const [error, setError] = useState("");
@@ -141,6 +181,9 @@ export function CommentForm({ denunciaId }: { denunciaId: string }) {
       },
       body: JSON.stringify({
         comentario,
+        // Traduz a escolha dos botoes para verdadeiro/falso.
+        // Este unico valor decide se a mensagem fica interna ou se aparece
+        // para quem denunciou e ainda dispara um e-mail.
         publico: mode === "public"
       })
     });
@@ -159,6 +202,10 @@ export function CommentForm({ denunciaId }: { denunciaId: string }) {
 
   return (
     <form className="grid gap-4" onSubmit={submit}>
+      {/* OS DOIS BOTOES QUE DECIDEM O DESTINO DA MENSAGEM.
+          Nao sao dois campos diferentes: e o mesmo texto indo para lugares
+          diferentes. Por isso a escolha aparece ANTES do campo de digitar, e
+          nao depois. Quem escreve ja sabe para quem esta escrevendo. */}
       <div className="grid gap-3 rounded-calm bg-base p-3 shadow-neuro-inset sm:grid-cols-2" role="group" aria-label="Tipo de comentário">
         <button
           className={`min-h-11 rounded-soft px-4 py-3 text-sm font-bold ${
@@ -181,6 +228,10 @@ export function CommentForm({ denunciaId }: { denunciaId: string }) {
           Resposta ao denunciante
         </button>
       </div>
+      {/* A CONFIRMACAO ESCRITA do que vai acontecer.
+          A cor dos botoes ja indica a escolha, mas cor sozinha nao basta:
+          uma pessoa daltonica, ou alguem com pressa, poderia se enganar.
+          Aqui o sistema escreve com todas as letras quem vai ler a mensagem. */}
       <p className="rounded-soft bg-base p-3 text-sm font-semibold leading-5 text-text-secondary shadow-neuro-inset">
         {mode === "internal"
           ? "Nota interna: visível apenas para a equipe."

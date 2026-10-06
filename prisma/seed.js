@@ -1,7 +1,23 @@
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * Coloca as 8 categorias de denuncia dentro do banco de dados na primeira
+ * vez que o sistema e instalado. Sem isso, o formulario publico apareceria
+ * vazio, sem nenhuma opcao para a pessoa escolher.
+ *
+ * Ele usa uma operacao chamada "upsert": se a categoria ja existe, atualiza;
+ * se nao existe, cria. Por isso pode ser rodado varias vezes sem duplicar nada.
+ *
+ * Para a apresentacao: e a "carga inicial" do sistema.
+ */
+
 const { PrismaClient, Prioridade } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
+// BLOCO 1 - As 8 categorias, escritas de forma compacta.
+// Cada linha segue a mesma ordem: apelido tecnico, nome, descricao, icone,
+// prioridade inicial e posicao no formulario.
 const categorias = [
   ["bullying", "Bullying", "Ameaças, humilhações, intimidação ou exclusão repetida.", "B", Prioridade.MEDIA, 1],
   ["cyberbullying", "Cyberbullying", "Agressões, exposição ou intimidação em ambientes digitais.", "C", Prioridade.MEDIA, 2],
@@ -15,8 +31,13 @@ const categorias = [
   slug, nome, descricao, icone, prioridadePadrao, ordem
 }));
 
+// BLOCO 2 - Grava as categorias no banco, uma por uma.
 async function main() {
   for (const categoria of categorias) {
+    // O "upsert" e a juncao de update com insert: existindo a categoria com
+    // aquele apelido, ela e atualizada; nao existindo, e criada.
+    // Por isso este script pode ser rodado quantas vezes for preciso sem
+    // duplicar nada, o que e util a cada nova instalacao do sistema.
     await prisma.categoria.upsert({
       where: { slug: categoria.slug },
       update: categoria,
@@ -25,6 +46,10 @@ async function main() {
   }
 }
 
+// BLOCO 3 - Executa e fecha a conexao com o banco no fim.
+// Dando erro, mostra a mensagem e encerra com codigo 1, que avisa ao sistema
+// operacional que algo falhou. Isso importa em instalacao automatizada: um
+// erro silencioso deixaria o sistema no ar sem nenhuma categoria cadastrada.
 main()
   .then(() => prisma.$disconnect())
   .catch(async (error) => {

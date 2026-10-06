@@ -1,9 +1,41 @@
 "use client";
 
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * E o FORMULARIO DE DENUNCIA em 4 etapas, o componente mais importante da
+ * parte publica do sistema.
+ *
+ * As 4 etapas:
+ *   1. Relato   -> categoria e descricao (as unicas obrigatorias).
+ *   2. Detalhes -> data, local e envolvidos (tudo opcional).
+ *   3. Provas   -> ate 5 arquivos de 10 MB (opcional).
+ *   4. Envio    -> anonima ou identificada, e o aceite dos termos.
+ *
+ * Por que dividir em etapas? Uma tela unica com 10 campos assusta quem ja
+ * esta nervoso para denunciar. Perguntas curtas, uma de cada vez, reduzem
+ * a desistencia no meio do caminho.
+ *
+ * Duas decisoes que valem citar na apresentacao:
+ *
+ *   - Os campos de nome, e-mail e telefone so aparecem na tela DEPOIS que a
+ *     pessoa escolhe se identificar. Na opcao anonima eles nao existem.
+ *
+ *   - A conferencia dos campos e feita duas vezes: aqui, para avisar rapido
+ *     sem recarregar a pagina, e de novo no servidor. A daqui e conforto;
+ *     a do servidor e a que realmente protege, porque qualquer pessoa pode
+ *     burlar o que roda no proprio navegador.
+ *
+ * No fim, o protocolo recebido e guardado na memoria temporaria da aba
+ * (sessionStorage) para ser exibido na tela seguinte, e some quando a aba
+ * e fechada.
+ */
+
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CategoriaCard,
+  CategoriaIcone,
   FileDropzone,
   NeuButton,
   NeuCard,
@@ -14,6 +46,7 @@ import {
 } from "@/components/ui";
 import { categoriasIniciais } from "@/lib/categorias";
 
+// BLOCO 1 - O formato de um arquivo que ja foi enviado com sucesso.
 type UploadedFile = {
   arquivoUrl: string;
   nomeOriginal: string;
@@ -21,6 +54,8 @@ type UploadedFile = {
   tamanho: number;
 };
 
+// BLOCO 2 - Tudo que o formulario guarda enquanto a pessoa preenche.
+// E a "ficha em branco" que vai sendo completada etapa por etapa.
 type FormState = {
   categoriaSlug: string;
   descricao: string;
@@ -35,6 +70,10 @@ type FormState = {
   aceiteTermos: boolean;
 };
 
+// BLOCO 3 - Como o formulario comeca, com tudo vazio.
+// Repare em "anonima: true". A opcao ja vem marcada como ANONIMA.
+// Isso e uma decisao de privacidade: se a pessoa nao mexer em nada, ela fica
+// protegida. O padrao mais seguro e o que exige menos esforco dela.
 const initialState: FormState = {
   categoriaSlug: "",
   descricao: "",
@@ -49,20 +88,31 @@ const initialState: FormState = {
   aceiteTermos: false
 };
 
+// BLOCO 4 - Os limites de anexo, repetidos aqui de proposito.
+// Eles ja existem no servidor. Aqui servem so para avisar a pessoa na hora,
+// antes de gastar tempo e dados enviando um arquivo que seria recusado.
+// Quem vale de verdade e sempre a conferencia do servidor.
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const allowedExtensions = ["jpg", "jpeg", "png", "webp", "pdf"];
 
 export function DenunciaForm() {
-  const router = useRouter();
-  const [step, setStep] = useState(0);
-  const [form, setForm] = useState<FormState>(initialState);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [formError, setFormError] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  // BLOCO 5 - A MEMORIA DO FORMULARIO.
+  // Cada linha guarda uma informacao que muda enquanto a pessoa usa a tela.
+  // Quando qualquer uma delas muda, a tela se redesenha sozinha.
+  const router = useRouter();                                              // leva para outra pagina no fim
+  const [step, setStep] = useState(0);                                     // etapa atual (0 a 3)
+  const [form, setForm] = useState<FormState>(initialState);               // o que ja foi preenchido
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({}); // erros por campo
+  const [formError, setFormError] = useState("");                          // erro geral do topo
+  const [uploading, setUploading] = useState(false);                       // esta enviando anexo?
+  const [submitting, setSubmitting] = useState(false);                     // esta enviando a denuncia?
 
+  // Conta os caracteres do relato para mostrar "35/20 caracteres minimos".
   const descriptionCount = form.descricao.trim().length;
+
+  // BLOCO 6 - Calcula a situacao de cada bolinha da trilha de etapas:
+  // concluida (completed), atual (current) ou ainda por vir (pending).
   const steps = useMemo(
     () => [
       { label: "Relato", state: step > 0 ? "completed" : step === 0 ? "current" : "pending" },
@@ -73,6 +123,10 @@ export function DenunciaForm() {
     [step]
   );
 
+  // BLOCO 7 - Guarda o que a pessoa acabou de digitar em um campo.
+  // Faz duas coisas: atualiza o valor e APAGA o erro daquele campo.
+  // Assim a mensagem em vermelho some assim que a pessoa comeca a corrigir,
+  // em vez de ficar la acusando enquanto ela ja esta consertando.
   function updateField<Key extends keyof FormState>(key: Key, value: FormState[Key]) {
     setForm((current) => ({ ...current, [key]: value }));
     setFieldErrors((current) => {
@@ -82,9 +136,12 @@ export function DenunciaForm() {
     });
   }
 
+  // BLOCO 8 - Confere apenas os campos da etapa em que a pessoa esta.
+  // Cobrar tudo de uma vez seria injusto: ela nem viu as outras etapas ainda.
   function validateCurrentStep() {
     const errors: Record<string, string> = {};
 
+    // Etapa 1 (Relato): categoria escolhida e descricao com 20 caracteres.
     if (step === 0) {
       if (!form.categoriaSlug) {
         errors.categoriaSlug = "Escolha uma categoria para continuar.";
@@ -95,6 +152,9 @@ export function DenunciaForm() {
       }
     }
 
+    // Etapa 4 (Envio): o e-mail so e cobrado de quem escolheu se identificar,
+    // e o aceite dos termos e sempre obrigatorio.
+    // As etapas 2 e 3 nao aparecem aqui porque sao inteiramente opcionais.
     if (step === 3) {
       if (!form.anonima && !form.denuncianteEmail.trim()) {
         errors.denuncianteEmail = "Informe um e-mail para receber atualizações da denúncia identificada.";
@@ -109,6 +169,8 @@ export function DenunciaForm() {
     return Object.keys(errors).length === 0;
   }
 
+  // BLOCO 9 - Botao "Continuar": so avanca se a etapa atual estiver correta.
+  // O Math.min impede passar da ultima etapa.
   function goNext() {
     setFormError("");
 
@@ -119,12 +181,16 @@ export function DenunciaForm() {
     setStep((current) => Math.min(current + 1, 3));
   }
 
+  // BLOCO 10 - Botao "Voltar". Limpa os erros antes de voltar, porque nao faz
+  // sentido cobrar de uma etapa que a pessoa esta deixando para tras.
+  // Importante: voltar NAO apaga o que ja foi preenchido.
   function goBack() {
     setFormError("");
     setFieldErrors({});
     setStep((current) => Math.max(current - 1, 0));
   }
 
+  // BLOCO 11 - ENVIO DOS ANEXOS.
   async function uploadFiles(files: FileList | null) {
     if (!files?.length) {
       return;
@@ -133,6 +199,8 @@ export function DenunciaForm() {
     setFormError("");
     const selectedFiles = Array.from(files);
 
+    // Confere o total: os que ja estao mais os que acabaram de ser escolhidos.
+    // Sem essa soma, seria possivel passar dos 5 enviando de dois em dois.
     if (form.anexos.length + selectedFiles.length > MAX_FILES) {
       setFormError("Envie no máximo 5 arquivos. Remova um anexo antes de adicionar outro.");
       return;
@@ -143,6 +211,8 @@ export function DenunciaForm() {
     try {
       const uploaded: UploadedFile[] = [];
 
+      // Envia um arquivo de cada vez. Cada um passa pelas mesmas conferencias
+      // de formato e tamanho antes de sair do navegador.
       for (const file of selectedFiles) {
         const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
 
@@ -154,6 +224,8 @@ export function DenunciaForm() {
           throw new Error("O arquivo passa de 10 MB. Escolha um menor ou reduza a qualidade da imagem.");
         }
 
+        // Empacota o arquivo e manda para a rota /api/upload, que salva e
+        // devolve o endereco onde ele ficou guardado.
         const body = new FormData();
         body.append("file", file);
 
@@ -174,10 +246,14 @@ export function DenunciaForm() {
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Não foi possível enviar o arquivo.");
     } finally {
+      // O "finally" roda sempre, com erro ou sem erro. Isso garante que o
+      // aviso de "Enviando arquivo" sempre desapareca da tela.
       setUploading(false);
     }
   }
 
+  // BLOCO 12 - Botao "Remover arquivo". Monta a lista de novo sem o arquivo
+  // escolhido, comparando pelo endereco dele.
   function removeFile(url: string) {
     updateField(
       "anexos",
@@ -185,9 +261,14 @@ export function DenunciaForm() {
     );
   }
 
+  // BLOCO 13 - O ENVIO FINAL DA DENUNCIA.
   async function submitDenuncia() {
     setFormError("");
 
+    // Duas travas antes de enviar:
+    //   1. a ultima etapa precisa estar valida;
+    //   2. "submitting" impede o clique duplo. Sem isso, dois cliques rapidos
+    //      cadastrariam a mesma denuncia duas vezes, com protocolos diferentes.
     if (!validateCurrentStep() || submitting) {
       return;
     }
@@ -195,6 +276,7 @@ export function DenunciaForm() {
     setSubmitting(true);
 
     try {
+      // Monta o pacote e envia para a rota que grava a denuncia.
       const response = await fetch("/api/denuncias", {
         method: "POST",
         headers: {
@@ -208,6 +290,12 @@ export function DenunciaForm() {
           envolvidos: form.envolvidos || null,
           anexos: form.anexos,
           anonima: form.anonima,
+
+          // A REGRA DO ANONIMATO, aplicada tambem aqui.
+          // Leia: "se for anonima, mande vazio; senao, mande o valor".
+          // Sendo anonima, os dados pessoais nem saem do navegador da pessoa.
+          // O servidor repete essa mesma regra na hora de gravar, entao a
+          // protecao existe nas duas pontas.
           denuncianteNome: form.anonima ? null : form.denuncianteNome || null,
           denuncianteEmail: form.anonima ? null : form.denuncianteEmail || null,
           denuncianteTelefone: form.anonima ? null : form.denuncianteTelefone || null,
@@ -216,14 +304,22 @@ export function DenunciaForm() {
       });
       const result = await response.json();
 
+      // O servidor recusou: aproveita a lista de campos com problema que ele
+      // devolveu e marca cada um em vermelho na tela.
       if (!response.ok) {
         setFieldErrors(result.campos ?? {});
         throw new Error(result.erro ?? "Não foi possível enviar a denúncia agora.");
       }
 
+      // DEU CERTO. Guarda o protocolo na memoria temporaria da aba e leva a
+      // pessoa para a tela de confirmacao, que vai exibi-lo.
+      // Essa memoria (sessionStorage) e apagada quando a aba fecha, e serve
+      // so para atravessar de uma tela para a outra.
       sessionStorage.setItem("ultimoProtocoloDenuncia", result.protocolo);
+      if (result.verificacaoEnviada) sessionStorage.setItem("ultimaDenunciaVerificacaoEnviada", "1");
       router.push("/denunciar/enviada");
     } catch (error) {
+      // Deu errado: mostra o aviso e LIBERA o botao para nova tentativa.
       setFormError(error instanceof Error ? error.message : "Não foi possível enviar a denúncia agora.");
       setSubmitting(false);
     }
@@ -231,8 +327,10 @@ export function DenunciaForm() {
 
   return (
     <div className="grid gap-6" aria-busy={submitting || uploading || undefined}>
+      {/* BLOCO 14 - A TELA. A trilha de etapas fica sempre visivel no topo. */}
       <StepIndicator steps={steps} />
 
+      {/* Aviso geral de erro, quando existe algum. */}
       {formError && (
         <div className="rounded-soft border border-danger-600/30 bg-danger-100 p-4 text-sm font-semibold leading-6 text-danger-600" role="alert">
           {formError}
@@ -240,6 +338,8 @@ export function DenunciaForm() {
       )}
 
       <NeuCard>
+        {/* ETAPA 1 - RELATO. Aparece apenas quando step vale 0.
+            E a unica etapa com campos obrigatorios: categoria e descricao. */}
         {step === 0 && (
           <section className="grid gap-6">
             <div>
@@ -254,7 +354,7 @@ export function DenunciaForm() {
                 {categoriasIniciais.map((categoria) => (
                   <CategoriaCard
                     key={categoria.slug}
-                    icon={categoria.icone}
+                    icon={<CategoriaIcone slug={categoria.slug} />}
                     title={categoria.nome}
                     description={categoria.descricao}
                     selected={form.categoriaSlug === categoria.slug}
@@ -278,6 +378,8 @@ export function DenunciaForm() {
           </section>
         )}
 
+        {/* ETAPA 2 - DETALHES. Data, local e envolvidos, tudo opcional.
+            Ninguem e obrigado a lembrar de tudo para poder denunciar. */}
         {step === 1 && (
           <section className="grid gap-6">
             <div>
@@ -314,6 +416,7 @@ export function DenunciaForm() {
           </section>
         )}
 
+        {/* ETAPA 3 - PROVAS. Ate 5 arquivos de 10 MB, tambem opcional. */}
         {step === 2 && (
           <section className="grid gap-6">
             <div>
@@ -347,6 +450,7 @@ export function DenunciaForm() {
           </section>
         )}
 
+        {/* ETAPA 4 - IDENTIFICACAO E ENVIO. A etapa mais delicada do sistema. */}
         {step === 3 && (
           <section className="grid gap-6">
             <div>
@@ -387,6 +491,11 @@ export function DenunciaForm() {
               </div>
             </fieldset>
 
+            {/* OS CAMPOS PESSOAIS SO EXISTEM AQUI DENTRO.
+                Leia a condicao: "se NAO for anonima, mostre este bloco".
+                Na opcao anonima, nome, e-mail e telefone nem chegam a ser
+                desenhados na tela. Nao estao escondidos: nao existem.
+                Este e um bom trecho para mostrar na apresentacao. */}
             {!form.anonima && (
               <div className="grid gap-5 sm:grid-cols-2">
                 <NeuInput
@@ -429,6 +538,9 @@ export function DenunciaForm() {
         )}
       </NeuCard>
 
+      {/* BLOCO 15 - A NAVEGACAO ENTRE AS ETAPAS.
+          Nas tres primeiras aparece "Continuar"; na ultima, "Enviar denuncia".
+          Trocar o texto do botao deixa claro que aquele clique e o definitivo. */}
       <div className="grid gap-3 sm:flex sm:justify-between">
         <NeuButton variant="ghost" onClick={goBack} disabled={step === 0 || submitting}>
           Voltar
@@ -447,6 +559,8 @@ export function DenunciaForm() {
   );
 }
 
+// BLOCO 16 - Mostra o tamanho do arquivo em KB ou MB, para a pessoa conferir
+// o que anexou sem precisar entender a contagem em bytes do computador.
 function formatFileSize(size: number) {
   if (size < 1024 * 1024) {
     return `${Math.round(size / 1024)} KB`;

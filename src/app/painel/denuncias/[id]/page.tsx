@@ -1,3 +1,21 @@
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * E a tela de DETALHE de uma denuncia, onde o caso e efetivamente tratado.
+ *
+ * Reune tudo em um lugar so: o relato completo, data e local, os anexos, a
+ * linha do tempo do caso e os campos para mudar status, prioridade e
+ * responsavel.
+ *
+ * Ponto importante para a apresentacao: a linha do tempo aqui mostra TUDO,
+ * inclusive as notas internas da equipe (marcadas em vermelho). Ja a tela
+ * publica de acompanhamento mostra apenas os itens marcados como publicos.
+ * E a mesma informacao com dois niveis de visibilidade.
+ *
+ * O bloco "Denunciante" so exibe nome, e-mail e telefone quando a denuncia
+ * NAO e anonima. Sendo anonima, ele mostra apenas a etiqueta Anonima.
+ */
+
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -20,6 +38,9 @@ type PainelDenunciaDetalhePageProps = {
 };
 
 export default async function PainelDenunciaDetalhePage({ params }: PainelDenunciaDetalhePageProps) {
+  // BLOCO 1 - Duas consultas ao mesmo tempo:
+  //   1. a denuncia completa, com categoria, responsavel, anexos e historico;
+  //   2. a lista de usuarios ativos, para preencher o campo "Responsavel".
   const [denuncia, responsaveis] = await Promise.all([
     prisma.denuncia.findUnique({
       where: { id: params.id },
@@ -61,10 +82,20 @@ export default async function PainelDenunciaDetalhePage({ params }: PainelDenunc
     })
   ]);
 
+  // Caso inexistente, ou identificador digitado errado: mostra a pagina 404.
   if (!denuncia) {
     notFound();
   }
 
+  // BLOCO 2 - Transforma o historico do banco nos itens da linha do tempo.
+  // O titulo de cada item e escolhido conforme o que aquele registro e:
+  //   houve mudanca de status -> "Status atualizado para ...";
+  //   comentario publico      -> "Resposta ao denunciante";
+  //   comentario interno      -> "Nota interna".
+  //
+  // A ultima linha e a mais importante: ela marca cada item como publico ou
+  // interno, e e isso que faz as notas da equipe aparecerem com fundo
+  // avermelhado, avisando que aquilo NAO e visto por quem denunciou.
   const timelineItems = denuncia.historico.map((item) => ({
     title: item.statusNovo
       ? `Status atualizado para ${statusLabelMap[item.statusNovo]}`
@@ -92,6 +123,10 @@ export default async function PainelDenunciaDetalhePage({ params }: PainelDenunc
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
         <div className="grid gap-6">
+          {/* BLOCO 3 - O RELATO COMPLETO, exatamente como foi escrito.
+              O "whitespace-pre-wrap" preserva as quebras de linha do texto
+              original. Sem ele, tudo viraria um paragrafo unico e a leitura
+              de um relato longo ficaria muito mais dificil. */}
           <NeuCard title="Descrição completa" description={denuncia.categoria.nome}>
             <p className="whitespace-pre-wrap text-base leading-7 text-text-primary">{denuncia.descricao}</p>
           </NeuCard>
@@ -117,6 +152,9 @@ export default async function PainelDenunciaDetalhePage({ params }: PainelDenunc
                     target="_blank"
                     rel="noreferrer"
                   >
+                    {/* Sendo imagem, mostra a previa; sendo PDF, mostra uma
+                        caixa escrita PDF. Assim a equipe reconhece o tipo do
+                        anexo antes de abrir. */}
                     {anexo.tipoMime.startsWith("image/") ? (
                       <Image
                         alt={`Anexo ${anexo.nomeOriginal}`}
@@ -182,6 +220,12 @@ export default async function PainelDenunciaDetalhePage({ params }: PainelDenunc
             </dl>
           </NeuCard>
 
+          {/* BLOCO 4 - OS DADOS DO DENUNCIANTE.
+              Sendo anonima, aparece apenas a etiqueta "Anônima". Nao ha nada
+              escondido nem oculto atras de um botao: o banco simplesmente nao
+              guardou nome, e-mail nem telefone nesse caso.
+              Sendo identificada, os tres campos aparecem para a equipe entrar
+              em contato. Este e um bom trecho para mostrar na apresentacao. */}
           <NeuCard title="Denunciante">
             {denuncia.anonima ? (
               <span className="inline-flex min-h-8 items-center rounded-full bg-[#D8E4E6] px-3 text-sm font-bold text-ink-600">
@@ -190,7 +234,16 @@ export default async function PainelDenunciaDetalhePage({ params }: PainelDenunc
             ) : (
               <dl className="grid gap-4">
                 <InfoItem label="Nome" value={denuncia.denuncianteNome || "Não informado"} />
-                <InfoItem label="E-mail" value={denuncia.denuncianteEmail || "Não informado"} />
+                {/* Avisos por e-mail so saem para e-mail confirmado: a equipe ve
+                    aqui se a pessoa vai ou nao recebe-los. */}
+                <InfoItem
+                  label="E-mail"
+                  value={
+                    denuncia.denuncianteEmail
+                      ? `${denuncia.denuncianteEmail} (${denuncia.denuncianteEmailVerificadoEm ? "confirmado" : "não confirmado, não recebe avisos"})`
+                      : "Não informado"
+                  }
+                />
                 <InfoItem label="Telefone" value={denuncia.denuncianteTelefone || "Não informado"} />
               </dl>
             )}
@@ -201,6 +254,10 @@ export default async function PainelDenunciaDetalhePage({ params }: PainelDenunc
   );
 }
 
+// BLOCO 5 - Um molde de "rotulo e valor" reaproveitado por toda a tela.
+// Usa as marcacoes dt e dd, proprias de listas de definicao, o que ajuda o
+// leitor de tela a anunciar "Local: pátio" como um par, e nao como duas
+// frases soltas.
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-soft bg-base p-4 shadow-neuro-inset">

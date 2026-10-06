@@ -1,6 +1,25 @@
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * Explica, em linguagem simples, quais dados o sistema coleta e como ele
+ * trata a LGPD (Lei Geral de Protecao de Dados).
+ *
+ * O ponto central: na denuncia anonima o sistema nao pede e nao guarda nome,
+ * e-mail nem telefone. Os campos nem chegam a aparecer na tela.
+ *
+ * Para a apresentacao: e a tela que sustenta o discurso de privacidade.
+ */
+
 import Link from "next/link";
 import { NeuCard } from "@/components/ui";
 
+// BLOCO UNICO - Os quatro pontos da politica de privacidade.
+// Cada um corresponde a algo que existe de verdade no codigo:
+//   anonima      -> a regra de gravar vazio na rota /api/denuncias;
+//   identificada -> os dados usados apenas para aviso por e-mail;
+//   historico    -> a tabela de historico com a marcacao publico/interno;
+//   acesso       -> o porteiro (middleware) e a checagem de conta ativa.
+// A pagina nao promete nada que o sistema nao faca.
 const topics = [
   {
     title: "Denúncia anônima",
@@ -41,6 +60,10 @@ export default function PrivacidadePage() {
         ))}
       </section>
 
+      {/* Este cartao final e uma ressalva honesta: a politica completa ainda
+          precisa ser revisada pela instituicao antes da publicacao.
+          A pagina descreve o que o sistema realmente faz e evita prometer o
+          que depende de processos externos a ele. */}
       <NeuCard title="Importante" variant="pressed">
         <p className="text-sm leading-6 text-text-secondary">
           A política completa deve ser revisada pela instituição antes da publicação. Esta tela deixa claro o comportamento previsto no sistema e evita promessas que dependem de processos externos.

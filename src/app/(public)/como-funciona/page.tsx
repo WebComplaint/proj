@@ -1,6 +1,19 @@
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * Explica o processo em 3 passos e, principalmente, deixa claro o que
+ * aparece e o que NAO aparece na consulta publica.
+ *
+ * Para a apresentacao: e a tela que responde "e depois que eu enviar?".
+ */
+
 import Link from "next/link";
 import { NeuCard } from "@/components/ui";
 
+// BLOCO UNICO - Os textos dos 3 passos do processo.
+// A pagina inteira e so texto explicativo, sem nenhum campo para preencher.
+// Ela existe para responder a duvida mais comum de quem hesita em denunciar:
+// "o que acontece depois que eu enviar?".
 const steps = [
   {
     title: "Você registra o relato",
@@ -41,6 +54,10 @@ export default function ComoFuncionaPage() {
         ))}
       </section>
 
+      {/* Este cartao e o mais importante da pagina. Ele diz de forma direta o
+          que a consulta por protocolo mostra e o que ela nao mostra.
+          Deixar isso claro antes evita a frustracao de quem consultaria
+          esperando ver a apuracao interna do caso. */}
       <NeuCard title="O que aparece para quem acompanha" description="A consulta por protocolo mostra somente informações públicas do caso.">
         <div className="grid gap-4 sm:grid-cols-2">
           <p className="rounded-soft bg-base p-4 text-sm leading-6 text-text-secondary shadow-neuro-inset">

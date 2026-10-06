@@ -1,5 +1,23 @@
 "use client";
 
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * Sao os dois formularios das telas de administracao:
+ *   UsuarioForm   -> cria e edita membros do corpo docente.
+ *   CategoriaForm -> cria e edita categorias de denuncia.
+ *
+ * Os dois usam o mesmo truque: o MESMO formulario serve para criar e para
+ * editar. Se ele recebe um registro existente, ja vem preenchido e envia a
+ * alteracao. Se nao recebe nada, vem em branco e cria um novo.
+ *
+ * No formulario de usuario, deixar o campo de senha em branco mantem a
+ * senha atual. Isso permite corrigir o nome ou o cargo de alguem sem
+ * precisar redefinir a senha da pessoa.
+ *
+ * Para a apresentacao: menos telas para manter, mesmo resultado.
+ */
+
 import type { Categoria, Perfil, Prioridade } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -14,6 +32,12 @@ type UsuarioListItem = {
   ativo: boolean;
 };
 
+// ============================================================
+// PRIMEIRO FORMULARIO: CORPO DOCENTE
+// ============================================================
+// O "usuario?" com interrogacao significa que ele e opcional.
+// Recebendo um usuario, o formulario EDITA aquela pessoa.
+// Sem receber nada, ele CRIA uma pessoa nova. Um formulario, dois usos.
 export function UsuarioForm({ usuario }: { usuario?: UsuarioListItem }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -24,6 +48,7 @@ export function UsuarioForm({ usuario }: { usuario?: UsuarioListItem }) {
     setError("");
     setLoading(true);
 
+    // Recolhe o que foi digitado nos campos e monta o pacote de envio.
     const formData = new FormData(event.currentTarget);
     const payload = {
       id: usuario?.id,
@@ -33,6 +58,10 @@ export function UsuarioForm({ usuario }: { usuario?: UsuarioListItem }) {
       perfil: String(formData.get("perfil") ?? "PROFESSOR"),
       ativo: formData.get("ativo") === "on"
     };
+    // AQUI ESTA O TRUQUE DOS DOIS USOS.
+    // Editando alguem (existe usuario), envia PATCH, que significa alterar.
+    // Criando alguem (nao existe), envia POST, que significa criar.
+    // O mesmo formulario, o mesmo endereco, e apenas o verbo muda.
     const response = await fetch("/api/painel/usuarios", {
       method: usuario ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
@@ -40,12 +69,16 @@ export function UsuarioForm({ usuario }: { usuario?: UsuarioListItem }) {
     });
     const result = await response.json();
 
+    // Deu erro: mostra a primeira mensagem de campo, se houver, ou a mensagem
+    // geral. Uma de cada vez e mais facil de resolver do que uma lista inteira.
     if (!response.ok) {
       setError(result.campos ? Object.values(result.campos)[0] : result.erro);
       setLoading(false);
       return;
     }
 
+    // Deu certo: limpa os campos e manda a pagina recarregar os dados, para o
+    // registro novo (ou alterado) aparecer na lista logo abaixo.
     event.currentTarget.reset();
     setLoading(false);
     router.refresh();
@@ -61,6 +94,11 @@ export function UsuarioForm({ usuario }: { usuario?: UsuarioListItem }) {
       <div className="grid gap-4 sm:grid-cols-2">
         <NeuInput label="Nome" name="nome" defaultValue={usuario?.nome} required />
         <NeuInput label="E-mail" name="email" type="email" defaultValue={usuario?.email} required />
+        {/* O CAMPO DE SENHA MUDA CONFORME O USO.
+            Criando: "Senha inicial", obrigatoria, minimo de 10 caracteres.
+            Editando: "Nova senha", opcional. Deixando em branco, a senha atual
+            e mantida, e o administrador consegue corrigir o nome ou o cargo de
+            alguem sem precisar redefinir a senha da pessoa. */}
         <NeuInput
           label={usuario ? "Nova senha" : "Senha inicial"}
           name="senha"
@@ -75,6 +113,10 @@ export function UsuarioForm({ usuario }: { usuario?: UsuarioListItem }) {
           <option value="ADMIN">Administrador</option>
         </NeuSelect>
       </div>
+      {/* Nao existe botao de excluir usuario, apenas esta caixinha.
+          Desmarcar corta o acesso da pessoa, mas mantem o nome dela no
+          historico dos casos que ela tratou. Excluir de verdade apagaria a
+          rastreabilidade de quem tomou cada decisao. */}
       <NeuCheckbox label="Usuário ativo" name="ativo" defaultChecked={usuario?.ativo ?? true} />
       <NeuButton loading={loading} type="submit">
         {usuario ? "Salvar usuário" : "Criar usuário"}
@@ -83,6 +125,11 @@ export function UsuarioForm({ usuario }: { usuario?: UsuarioListItem }) {
   );
 }
 
+// ============================================================
+// SEGUNDO FORMULARIO: CATEGORIAS
+// ============================================================
+// Funciona exatamente como o de usuario: recebendo uma categoria, edita;
+// sem receber nada, cria uma nova.
 export function CategoriaForm({ categoria }: { categoria?: Categoria }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -111,12 +158,16 @@ export function CategoriaForm({ categoria }: { categoria?: Categoria }) {
     });
     const result = await response.json();
 
+    // Deu erro: mostra a primeira mensagem de campo, se houver, ou a mensagem
+    // geral. Uma de cada vez e mais facil de resolver do que uma lista inteira.
     if (!response.ok) {
       setError(result.campos ? Object.values(result.campos)[0] : result.erro);
       setLoading(false);
       return;
     }
 
+    // Deu certo: limpa os campos e manda a pagina recarregar os dados, para o
+    // registro novo (ou alterado) aparecer na lista logo abaixo.
     event.currentTarget.reset();
     setLoading(false);
     router.refresh();
@@ -131,9 +182,15 @@ export function CategoriaForm({ categoria }: { categoria?: Categoria }) {
       )}
       <div className="grid gap-4 sm:grid-cols-2">
         <NeuInput label="Nome" name="nome" defaultValue={categoria?.nome} required />
+        {/* O "slug" e o apelido tecnico da categoria, sem acento e sem espaco.
+            E ele que vai parar no endereco dos filtros do painel. Por isso o
+            exemplo mostrado e violencia_fisica, e nao "Violência física". */}
         <NeuInput label="Slug" name="slug" defaultValue={categoria?.slug} placeholder="violencia_fisica" required />
         <NeuInput label="Ícone" name="icone" defaultValue={categoria?.icone ?? ""} placeholder="V" />
         <NeuInput label="Ordem" name="ordem" type="number" min={0} defaultValue={categoria?.ordem ?? 0} />
+        {/* A prioridade padrao define com que urgencia as denuncias desta
+            categoria ja nascem no painel. E aqui que a escola registra que,
+            para ela, um certo tipo de caso e sempre grave. */}
         <NeuSelect label="Prioridade padrão" name="prioridadePadrao" defaultValue={categoria?.prioridadePadrao ?? "MEDIA"}>
           {prioridadeOptions.map((option) => (
             <option key={option.value} value={option.value}>

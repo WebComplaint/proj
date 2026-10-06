@@ -1,3 +1,13 @@
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * E a janela de confirmacao que aparece sobre a tela. Hoje ela e usada
+ * apenas na pagina de vitrine dos componentes, ficando disponivel para
+ * telas futuras.
+ *
+ * Para a apresentacao: pode pular.
+ */
+
 import type { ReactNode } from "react";
 import { NeuButton } from "@/components/ui/neu-button";
 
@@ -9,6 +19,11 @@ type ModalProps = {
   cancelLabel?: string;
 };
 
+// BLOCO UNICO - A janela de confirmacao.
+// As marcacoes role="dialog" e aria-modal avisam ao leitor de tela que uma
+// janela abriu por cima do conteudo e que a atencao deve ir para ela.
+// Os botoes aparecem em ordem invertida no celular (flex-col-reverse), para
+// que o botao de confirmar fique embaixo, mais perto do polegar.
 export function Modal({
   title,
   description,

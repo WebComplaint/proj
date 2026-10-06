@@ -1,3 +1,29 @@
+// ============================================================
+// O QUE ESTE ARQUIVO FAZ
+//
+// Este e a PLANTA DO BANCO DE DADOS. Assim como a planta de uma casa diz
+// quantos comodos existem e como eles se ligam, este arquivo diz quais
+// "fichas" o sistema guarda e como elas se relacionam.
+//
+// Sao 6 fichas principais:
+//   Usuario   -> quem trabalha na escola e pode entrar no painel.
+//   Categoria -> os tipos de denuncia (bullying, assedio, ameaca...).
+//   Denuncia  -> o relato em si, com protocolo, status e prioridade.
+//   Anexo     -> as fotos e PDFs enviados junto com o relato.
+//   Historico -> o diario do caso: tudo que a escola fez e quando.
+//   VerificacaoEmail -> os links que confirmam que um e-mail e de quem o informou.
+//
+// As listas com nomes em MAIUSCULO (enum) sao "opcoes fixas": o sistema
+// so aceita exatamente esses valores, evitando erro de digitacao.
+//
+// Para a apresentacao: e aqui que definimos o que o sistema lembra.
+// ============================================================
+
+// BLOCO 1 - Configuracao da ferramenta.
+// O "generator" manda criar o codigo que o site usa para conversar com o banco.
+// O "datasource" diz qual banco e (PostgreSQL) e onde ele esta. O endereco vem
+// de uma configuracao do servidor (DATABASE_URL), e nao escrito aqui, para que
+// a senha do banco nunca fique guardada dentro do codigo.
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,6 +33,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// BLOCO 2 - AS LISTAS DE OPCOES FIXAS (chamadas de "enum").
+// Sao listas fechadas: o banco recusa qualquer valor fora delas.
+// Isso impede que uma denuncia acabe com o status "em analize" escrito errado,
+// ou com um cargo que nao existe na escola.
+
+// Os quatro cargos da equipe. Todos veem denuncias; so o ADMIN entra nas
+// areas de cadastro de usuarios, categorias e relatorios.
 enum Perfil {
   PROFESSOR
   COORDENADOR
@@ -14,6 +47,8 @@ enum Perfil {
   ADMIN
 }
 
+// As etapas pelas quais uma denuncia passa, do recebimento ao encerramento.
+// A ordem em que aparecem aqui e a ordem natural do processo.
 enum StatusDenuncia {
   RECEBIDA
   EM_ANALISE
@@ -22,6 +57,9 @@ enum StatusDenuncia {
   ARQUIVADA
 }
 
+// Os niveis de urgencia. A prioridade inicial vem da categoria escolhida, e
+// nao de quem denuncia: alguem abalado nao deve ter que julgar a gravidade do
+// proprio caso.
 enum Prioridade {
   BAIXA
   MEDIA
@@ -29,64 +67,132 @@ enum Prioridade {
   URGENTE
 }
 
+// BLOCO 3 - FICHA DO USUARIO (a equipe da escola).
+// Cada linha aqui e uma coluna da tabela no banco.
+//   @id     -> e o identificador unico da ficha.
+//   @unique -> nao pode existir outro registro com o mesmo valor.
+//   @default-> o valor que entra sozinho quando nada e informado.
 model Usuario {
-  id           String   @id @default(cuid())
-  authUserId   String   @unique @db.Uuid
-  nome         String
-  email        String   @unique
-  perfil       Perfil   @default(COORDENADOR)
-  ativo        Boolean  @default(true)
+  id String @id @default(cuid())
+
+  // A ligacao com a conta de login do Supabase.
+  // Sao dois cadastros separados de proposito: o Supabase guarda a senha e
+  // cuida da autenticacao; o nosso banco guarda o nome e o cargo na escola.
+  // Assim o sistema nunca precisa armazenar senha nenhuma.
+  authUserId String @unique @db.Uuid
+  nome       String
+  email      String @unique
+  perfil     Perfil @default(COORDENADOR)
+
+  // Em vez de excluir alguem, a escola marca ativo como falso.
+  // A pessoa perde o acesso, mas o nome dela continua no historico dos casos
+  // que tratou. Excluir apagaria a rastreabilidade de quem decidiu o que.
+  ativo Boolean @default(true)
+
+  // Quando a pessoa confirmou que o e-mail e dela, clicando no link enviado.
+  // Vazio = ainda nao confirmou, e o painel fica bloqueado ate confirmar.
+  // Volta a ficar vazio sempre que o administrador troca o e-mail.
+  emailVerificadoEm DateTime?
+
+  // Datas preenchidas automaticamente pelo banco: quando a ficha foi criada e
+  // quando foi alterada pela ultima vez.
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
-  denunciasResponsavel Denuncia[]  @relation("Responsavel")
+  // As LIGACOES com as outras fichas. Estas duas linhas nao viram colunas: elas
+  // dizem que uma pessoa pode ser responsavel por varias denuncias e ter varios
+  // registros no historico.
+  denunciasResponsavel Denuncia[]         @relation("Responsavel")
+  verificacoesEmail    VerificacaoEmail[]
   historicos           Historico[]
 }
 
+// BLOCO 4 - FICHA DA CATEGORIA (os tipos de denuncia).
 model Categoria {
-  id               String     @id @default(cuid())
-  nome             String     @unique
+  id   String @id @default(cuid())
+  nome String @unique
+
+  // O apelido tecnico, sem acento e sem espaco (exemplo: violencia_fisica).
+  // E ele que aparece no endereco dos filtros do painel.
   slug             String     @unique
   descricao        String?    @db.Text
   icone            String?
+  // A urgencia com que as denuncias desta categoria ja nascem no painel.
   prioridadePadrao Prioridade @default(MEDIA)
-  ativa            Boolean    @default(true)
-  ordem            Int        @default(0)
+
+  // Como no usuario, a categoria nao e excluida: e desativada.
+  // Excluir deixaria as denuncias antigas sem categoria nenhuma.
+  ativa Boolean @default(true)
+
+  // A posicao do cartao no formulario publico.
+  ordem Int @default(0)
 
   denuncias Denuncia[]
 }
 
+// BLOCO 5 - FICHA DA DENUNCIA. E a ficha central de todo o sistema.
 model Denuncia {
-  id            String         @id @default(cuid())
-  protocolo     String         @unique
-  categoriaId   String
-  anonima       Boolean        @default(true)
-  descricao     String         @db.Text
-  dataOcorrido  DateTime?
-  local         String?
-  envolvidos    String?        @db.Text
-  status        StatusDenuncia @default(RECEBIDA)
-  prioridade    Prioridade     @default(MEDIA)
+  id String @id @default(cuid())
 
+  // O codigo entregue a pessoa. O @unique garante que nao existam duas
+  // denuncias com o mesmo protocolo.
+  protocolo String @unique
+
+  categoriaId String
+
+  // Anonima ou identificada. Ja nasce como anonima: o padrao mais seguro e o
+  // que exige menos esforco de quem denuncia.
+  anonima Boolean @default(true)
+
+  // O relato. O @db.Text permite texto longo, sem limite pratico de tamanho.
+  descricao String @db.Text
+
+  // A interrogacao no fim do tipo significa OPCIONAL.
+  // Data, local e envolvidos podem ficar vazios: ninguem e obrigado a lembrar
+  // de tudo para poder denunciar.
+  dataOcorrido DateTime?
+  local        String?
+  envolvidos   String?        @db.Text
+  status       StatusDenuncia @default(RECEBIDA)
+  prioridade   Prioridade     @default(MEDIA)
+
+  // OS TRES CAMPOS MAIS SENSIVEIS DO SISTEMA.
+  // Todos opcionais, e todos ficam vazios quando a denuncia e anonima.
+  // Nao e a tela que os esconde: a rota que grava a denuncia forca o valor
+  // vazio nesse caso, entao o dado pessoal nunca chega ao banco.
   // Preenchidos SOMENTE quando anonima = false (RN-01)
   denuncianteNome     String?
   denuncianteEmail    String?
   denuncianteTelefone String?
 
+  // Quando quem denunciou confirmou o e-mail. Os avisos de status e de
+  // resposta SO sao enviados se este campo estiver preenchido: um e-mail
+  // digitado errado nunca recebe nada sobre a denuncia.
+  denuncianteEmailVerificadoEm DateTime?
+
   responsavelId String?
   criadoEm      DateTime @default(now())
   atualizadoEm  DateTime @updatedAt
 
-  categoria   Categoria  @relation(fields: [categoriaId], references: [id])
-  responsavel Usuario?   @relation("Responsavel", fields: [responsavelId], references: [id])
-  anexos      Anexo[]
-  historico   Historico[]
+  categoria         Categoria          @relation(fields: [categoriaId], references: [id])
+  responsavel       Usuario?           @relation("Responsavel", fields: [responsavelId], references: [id])
+  anexos            Anexo[]
+  historico         Historico[]
+  verificacoesEmail VerificacaoEmail[]
 
+  // OS INDICES. Sao como o indice remissivo no fim de um livro: em vez de ler
+  // todas as paginas para achar um assunto, o banco vai direto ao ponto.
+  // Foram criados justamente nos tres campos mais usados nos filtros do
+  // painel: status, categoria e data. Com muitos registros, e a diferenca
+  // entre a lista abrir na hora ou demorar segundos.
   @@index([status])
   @@index([categoriaId])
   @@index([criadoEm])
 }
 
+// BLOCO 6 - FICHA DO ANEXO (as fotos e PDFs enviados com o relato).
+// O arquivo em si fica guardado no servidor; aqui ficam apenas os dados sobre
+// ele: onde esta, o nome original, o tipo e o tamanho.
 model Anexo {
   id           String   @id @default(cuid())
   denunciaId   String
@@ -96,23 +202,72 @@ model Anexo {
   tamanho      Int
   criadoEm     DateTime @default(now())
 
+  // O "onDelete: Cascade" significa: apagando a denuncia, os anexos dela vao
+  // junto automaticamente. Sem isso, sobrariam arquivos orfaos no sistema,
+  // ligados a um caso que nao existe mais.
   denuncia Denuncia @relation(fields: [denunciaId], references: [id], onDelete: Cascade)
 
   @@index([denunciaId])
 }
 
+// BLOCO 7 - FICHA DO HISTORICO. E o diario do caso.
+// Cada linha registra algo que aconteceu: uma mudanca de status, uma nota
+// interna da equipe ou uma resposta enviada a quem denunciou.
 model Historico {
   id             String          @id @default(cuid())
   denunciaId     String
   usuarioId      String?
+  // De qual status saiu e para qual foi. Ficam vazios quando o registro e
+  // apenas um comentario, sem mudanca de etapa.
   statusAnterior StatusDenuncia?
   statusNovo     StatusDenuncia?
-  comentario     String?         @db.Text
-  publico        Boolean         @default(false)
-  criadoEm       DateTime        @default(now())
+
+  comentario String? @db.Text
+
+  // O CAMPO MAIS IMPORTANTE DESTA FICHA.
+  //   false -> nota interna, visivel so para a equipe.
+  //   true  -> aparece na consulta publica por protocolo.
+  // O padrao e falso: no silencio, a informacao fica restrita. Tornar publico
+  // e sempre uma escolha consciente de quem escreveu.
+  publico  Boolean  @default(false)
+  criadoEm DateTime @default(now())
 
   denuncia Denuncia @relation(fields: [denunciaId], references: [id], onDelete: Cascade)
   usuario  Usuario? @relation(fields: [usuarioId], references: [id])
 
+  @@index([denunciaId])
+}
+
+// Para quem e o link de confirmacao: um funcionario do painel ou quem denunciou.
+enum TipoVerificacaoEmail {
+  USUARIO
+  DENUNCIANTE
+}
+
+// BLOCO 8 - FICHA DA VERIFICACAO DE E-MAIL.
+// Cada linha e um link de confirmacao enviado por e-mail.
+//
+// O link carrega um codigo secreto (token). O banco NAO guarda esse codigo,
+// so a "impressao digital" dele (tokenHash). Assim, mesmo quem lesse o banco
+// inteiro nao conseguiria montar um link valido.
+//
+// O link vale uma unica vez (usadoEm) e por tempo limitado (expiraEm). Ele
+// tambem lembra para qual e-mail foi enviado: se o e-mail mudar depois, o link
+// antigo deixa de valer.
+model VerificacaoEmail {
+  id         String               @id @default(cuid())
+  tokenHash  String               @unique
+  tipo       TipoVerificacaoEmail
+  email      String
+  usuarioId  String?
+  denunciaId String?
+  expiraEm   DateTime
+  usadoEm    DateTime?
+  criadoEm   DateTime             @default(now())
+
+  usuario  Usuario?  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  denuncia Denuncia? @relation(fields: [denunciaId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
   @@index([denunciaId])
 }

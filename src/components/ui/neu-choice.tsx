@@ -1,3 +1,14 @@
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * Sao as caixinhas de marcar (checkbox) e as bolinhas de escolha (radio).
+ *
+ * A area clicavel inclui o texto ao lado, e nao apenas o quadradinho. Isso
+ * torna o clique muito mais facil no celular.
+ *
+ * Para a apresentacao: pode pular, e um detalhe de usabilidade.
+ */
+
 import type { InputHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
@@ -10,6 +21,9 @@ type NeuChoiceProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
 };
 
 export function NeuChoice({ type, label, description, error, icon, className, id, ...props }: NeuChoiceProps) {
+  // BLOCO 1 - Monta um identificador a partir do proprio texto do rotulo.
+  // "Usuário ativo" vira "ativo-usuário-ativo". Serve para ligar o texto a
+  // caixinha, permitindo clicar em qualquer um dos dois.
   const fallbackId = `${props.name ?? type}-${label.toLowerCase().replace(/\s+/g, "-")}`;
   const choiceId = id ?? fallbackId;
   const errorId = error ? `${choiceId}-error` : undefined;
@@ -48,6 +62,10 @@ export function NeuChoice({ type, label, description, error, icon, className, id
   );
 }
 
+// BLOCO 2 - Dois atalhos para o mesmo componente acima.
+// Checkbox: varias opcoes podem ser marcadas ao mesmo tempo.
+// Radio: apenas uma opcao do grupo pode ser escolhida.
+// O visual e o comportamento acessivel sao identicos nos dois casos.
 export function NeuCheckbox(props: Omit<NeuChoiceProps, "type">) {
   return <NeuChoice type="checkbox" {...props} />;
 }

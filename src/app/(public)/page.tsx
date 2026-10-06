@@ -1,6 +1,21 @@
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * E a PAGINA INICIAL, a primeira tela que a pessoa ve.
+ *
+ * Tem tres partes: os dois botoes principais (Fazer denuncia e Acompanhar
+ * denuncia), a explicacao do processo em 3 passos e os cartoes sobre
+ * sigilo. Todo o texto foi escrito para tranquilizar quem chega com medo.
+ *
+ * Para a apresentacao: comece a demonstracao por esta tela.
+ */
+
 import Link from "next/link";
 import { NeuCard } from "@/components/ui";
 
+// BLOCO 1 - Os textos dos 3 passos, escritos fora da tela.
+// Separar o texto do desenho tem uma vantagem pratica: para mudar uma frase,
+// a escola mexe so aqui, sem tocar na parte visual.
 const steps = [
   {
     title: "Conte o que aconteceu",
@@ -16,6 +31,9 @@ const steps = [
   }
 ];
 
+// BLOCO 2 - Os textos sobre sigilo. Eles aparecem logo na primeira tela de
+// proposito: quem pensa em denunciar precisa saber que estara protegido antes
+// de decidir escrever qualquer coisa.
 const privacyCards = [
   {
     title: "Anonimato",
@@ -43,6 +61,9 @@ export default function HomePage() {
           <p className="mt-4 max-w-2xl text-base leading-7 text-text-secondary sm:text-lg sm:leading-8">
             Registre uma situação de bullying, assédio, abuso ou discriminação com uma experiência curta, acolhedora e sem burocracia.
           </p>
+          {/* OS DOIS BOTOES PRINCIPAIS do sistema inteiro.
+              Sao apenas dois, e nao um menu cheio de opcoes: quem chega aqui
+              quer fazer uma denuncia ou acompanhar uma que ja fez. */}
           <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
             <Link className="btn-primary inline-flex min-h-11 w-full items-center justify-center px-5 py-4 text-base sm:w-auto" href="/denunciar">
               Fazer denúncia
@@ -71,6 +92,9 @@ export default function HomePage() {
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* O ".map" percorre a lista do bloco 1 e desenha um cartao para
+              cada item. Acrescentando um quarto passo la em cima, ele aparece
+              aqui sozinho, sem mexer nesta parte. */}
           {steps.map((step, index) => (
             <NeuCard key={step.title} as="article" className="grid gap-4">
               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-ocean-800 font-bold text-white">

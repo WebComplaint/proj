@@ -1,6 +1,22 @@
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * Lista os canais oficiais de socorro: 190, Disque 100, Conselho Tutelar e
+ * CVV 188.
+ *
+ * Esta pagina existe por responsabilidade. O sistema registra e acompanha
+ * casos, mas nao atende emergencia. Deixar isso claro evita que alguem em
+ * risco imediato fique so esperando uma resposta pelo site.
+ *
+ * Para a apresentacao: e o limite etico do projeto, vale citar.
+ */
+
 import Link from "next/link";
 import { NeuCard } from "@/components/ui";
 
+// BLOCO UNICO - Os canais oficiais de socorro, com o numero, o orgao e quando
+// acionar cada um. Sao canais publicos brasileiros, e nao telefones da escola:
+// eles funcionam 24 horas e independem do horario escolar.
 const channels = [
   {
     name: "190",
@@ -37,6 +53,9 @@ export default function AjudaPage() {
         </p>
       </section>
 
+      {/* Os quatro canais em cartoes grandes, com o numero em destaque.
+          O numero vem primeiro, e nao o nome do orgao: quem esta em risco
+          precisa achar o telefone rapido, sem ler o cartao inteiro. */}
       <section className="grid gap-4 sm:grid-cols-2">
         {channels.map((channel) => (
           <NeuCard key={channel.name} as="article">

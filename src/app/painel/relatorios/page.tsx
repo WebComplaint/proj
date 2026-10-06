@@ -1,3 +1,18 @@
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * Tela do administrador com o resumo de um periodo e a exportacao em CSV.
+ *
+ * O administrador escolhe as datas de inicio e fim e ve quantas denuncias
+ * houve no periodo, quantas foram anonimas, quantas identificadas e quantas
+ * urgentes. O botao Exportar CSV baixa uma planilha que abre no Excel.
+ *
+ * A planilha traz protocolo, categoria, status e datas, mas NAO traz o texto
+ * do relato nem os dados pessoais do denunciante.
+ *
+ * Para a apresentacao: serve para o relatorio da direcao e da secretaria.
+ */
+
 import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import { NeuCard, StatCard } from "@/components/ui";
@@ -13,12 +28,14 @@ type RelatoriosPageProps = {
 };
 
 export default async function RelatoriosPage({ searchParams = {} }: RelatoriosPageProps) {
+  // BLOCO 1 - Area restrita ao administrador.
   const session = await getPainelSession();
 
   if (!isAdmin(session?.user?.perfil)) {
     redirect("/painel?acesso=negado");
   }
 
+  // Monta o filtro do periodo escolhido. Sem datas, considera tudo.
   const where: Prisma.DenunciaWhereInput =
     searchParams.inicio || searchParams.fim
       ? {
@@ -28,6 +45,15 @@ export default async function RelatoriosPage({ searchParams = {} }: RelatoriosPa
           }
         }
       : {};
+  // BLOCO 2 - Faz as cinco contas do periodo ao mesmo tempo:
+  //   total          -> quantas denuncias houve;
+  //   anonimas       -> quantas foram anonimas;
+  //   identificadas  -> quantas tinham contato informado;
+  //   urgentes       -> quantas estao com prioridade urgente;
+  //   porStatus      -> quantas em cada etapa do processo.
+  //
+  // Sao numeros agregados, sem nome de ninguem. Um relatorio que responde
+  // "quanto e de que tipo", e nao "quem".
   const [total, anonimas, identificadas, urgentes, porStatus] = await Promise.all([
     prisma.denuncia.count({ where }),
     prisma.denuncia.count({ where: { ...where, anonima: true } }),
@@ -39,6 +65,9 @@ export default async function RelatoriosPage({ searchParams = {} }: RelatoriosPa
       _count: { _all: true }
     })
   ]);
+  // BLOCO 3 - Monta o endereco do botao "Exportar CSV" levando junto o mesmo
+  // periodo que esta na tela. Assim a planilha baixada corresponde exatamente
+  // aos numeros que a pessoa esta vendo, sem surpresa.
   const exportParams = new URLSearchParams();
 
   if (searchParams.inicio) {

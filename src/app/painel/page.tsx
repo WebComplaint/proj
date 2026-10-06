@@ -1,3 +1,18 @@
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * E a tela inicial do painel, o resumo do dia para a equipe da escola.
+ *
+ * Mostra, de cima para baixo: os 4 numeros principais, o alerta vermelho de
+ * casos parados ha mais de 48 horas, os dois graficos e as 5 denuncias mais
+ * recentes.
+ *
+ * Os numeros vem prontos do arquivo lib/dashboard.ts. Esta pagina apenas os
+ * desenha na tela.
+ *
+ * Para a apresentacao: e a tela mais forte da demonstracao do painel.
+ */
+
 import Link from "next/link";
 import { CategoryBarChart, MonthlyLineChart } from "@/components/painel/dashboard-charts";
 import { NeuCard, PrioridadeBadge, StatCard, StatusBadge } from "@/components/ui";
@@ -11,8 +26,16 @@ type PainelPageProps = {
 };
 
 export default async function PainelPage({ searchParams }: PainelPageProps) {
+  // BLOCO 1 - Verifica se a pessoa chegou aqui por ter sido barrada em uma
+  // area restrita. Nesse caso, o porteiro a redirecionou com "?acesso=negado",
+  // e a tela mostra um aviso explicando o motivo.
   const acessoNegado = searchParams?.acesso === "negado";
+
+  // BLOCO 2 - Busca todos os numeros do painel de uma vez.
+  // Esta pagina nao faz conta nenhuma: as contas estao em lib/dashboard.ts.
   const dashboard = await getDashboardData();
+
+  // Ha algum caso parado ha mais de 48 horas?
   const hasSlaAlert = dashboard.foraSla.length > 0;
 
   return (
@@ -31,6 +54,10 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
         </p>
       </section>
 
+      {/* BLOCO 3 - OS QUATRO NUMEROS PRINCIPAIS.
+          Eles contam a historia do mes em uma olhada: quantas denuncias
+          chegaram, quantas esperam triagem, quantas estao em tratamento e
+          quantas foram concluidas. */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Indicadores do painel">
         <StatCard
           label="Total do mês"
@@ -58,6 +85,12 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
         />
       </section>
 
+      {/* BLOCO 4 - O ALERTA DE PRAZO. Este e o trecho mais importante da tela.
+          Havendo casos parados ha mais de 48 horas, aparece um cartao vermelho
+          listando os cinco mais antigos, cada um clicavel.
+          Sem nenhum atraso, o cartao vira verde confirmando que a triagem
+          esta em dia. Os dois estados sao informativos: a tela nunca fica
+          silenciosa sobre o prazo. */}
       {hasSlaAlert ? (
         <NeuCard
           className="border border-danger-600/30 bg-danger-100"
@@ -96,6 +129,10 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
         </NeuCard>
       )}
 
+      {/* BLOCO 5 - OS DOIS GRAFICOS.
+          Barras por categoria respondem "que tipo de problema mais acontece".
+          Linha por mes responde "o volume esta subindo ou caindo".
+          Juntos, ajudam a escola a planejar acoes preventivas. */}
       <section className="grid gap-6 lg:grid-cols-2">
         <NeuCard title="Denúncias por categoria" description="Distribuição dos casos registrados.">
           <CategoryBarChart data={dashboard.porCategoria} />
@@ -114,6 +151,8 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
           </Link>
         }
       >
+        {/* BLOCO 6 - As 5 denuncias mais recentes, cada uma clicavel.
+            Havendo nenhuma, aparece uma frase explicando, e nao um vazio. */}
         {dashboard.recentes.length > 0 ? (
           <div className="grid gap-3">
             {dashboard.recentes.map((denuncia) => (

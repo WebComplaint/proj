@@ -1,5 +1,20 @@
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * E uma pagina de vitrine, feita para a equipe de desenvolvimento e nao para
+ * o publico. Ela mostra todas as pecas visuais do sistema lado a lado:
+ * botoes, cartoes, campos, etiquetas de status e linha do tempo.
+ *
+ * Serve como catalogo: em vez de reinventar um botao em cada tela, todas as
+ * telas usam as mesmas pecas mostradas aqui. E isso que faz o sistema
+ * parecer uniforme.
+ *
+ * Para a apresentacao: e uma boa tela para mostrar o cuidado com o design.
+ */
+
 import {
   CategoriaCard,
+  CategoriaIcone,
   EmergencyBar,
   EmptyState,
   FileDropzone,
@@ -20,6 +35,8 @@ import {
   Toast
 } from "@/components/ui";
 
+// BLOCO 1 - As listas usadas para mostrar todas as etiquetas de uma vez, e
+// assim conferir se todas continuam legiveis e com bom contraste.
 const statuses = ["recebida", "em_analise", "em_andamento", "resolvida", "arquivada"] as const;
 const priorities = ["baixa", "media", "alta", "urgente"] as const;
 
@@ -92,10 +109,10 @@ export default function DesignSystemPage() {
 
         <DemoSection title="Categorias">
           <div className="grid gap-4 md:grid-cols-4">
-            <CategoriaCard icon="B" title="Bullying" description="Ameaças, humilhação ou intimidação." selected />
-            <CategoriaCard icon="A" title="Assédio" description="Conduta invasiva ou constrangedora." />
-            <CategoriaCard icon="D" title="Discriminação" description="Tratamento injusto ou ofensivo." />
-            <CategoriaCard icon="O" title="Outra situação" description="Algo que não se encaixa acima." />
+            <CategoriaCard icon={<CategoriaIcone slug="bullying" />} title="Bullying" description="Ameaças, humilhação ou intimidação." selected />
+            <CategoriaCard icon={<CategoriaIcone slug="assedio" />} title="Assédio" description="Conduta invasiva ou constrangedora." />
+            <CategoriaCard icon={<CategoriaIcone slug="discriminacao" />} title="Discriminação" description="Tratamento injusto ou ofensivo." />
+            <CategoriaCard icon={<CategoriaIcone slug="outros" />} title="Outra situação" description="Algo que não se encaixa acima." />
           </div>
         </DemoSection>
 
@@ -195,6 +212,10 @@ export default function DesignSystemPage() {
   );
 }
 
+// BLOCO 2 - Cada secao da vitrine: um titulo e um cartao com os exemplos.
+// A pagina toda serve como catalogo. Em vez de reinventar um botao ou um campo
+// em cada tela, todas usam as mesmas pecas mostradas aqui. E isso que faz o
+// sistema inteiro parecer uniforme, e nao um remendo de telas diferentes.
 function DemoSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="grid gap-4">

@@ -1,3 +1,12 @@
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * E a lista suspensa de opcoes, usada nos filtros do painel e na escolha de
+ * status, prioridade e responsavel.
+ *
+ * Para a apresentacao: pode pular, e um campo de formulario.
+ */
+
 import type { SelectHTMLAttributes } from "react";
 import { forwardRef } from "react";
 import { cn } from "@/lib/cn";
@@ -8,6 +17,10 @@ type NeuSelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
   hint?: string;
 };
 
+// BLOCO UNICO - A lista suspensa, com a mesma estrutura dos demais campos:
+// titulo em cima, espaco para erro embaixo e as marcacoes de acessibilidade.
+// As opcoes vem de fora, pelo "children", o que permite reaproveitar este
+// mesmo componente para status, prioridade, responsavel e categoria.
 export const NeuSelect = forwardRef<HTMLSelectElement, NeuSelectProps>(
   ({ label, error, hint, id, className, children, ...props }, ref) => {
     const selectId = id ?? props.name;

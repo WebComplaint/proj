@@ -1,3 +1,12 @@
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * E o cartao branco usado como caixa de conteudo em praticamente todas as
+ * telas, com titulo e descricao opcionais.
+ *
+ * Para a apresentacao: pode pular, e a caixa padrao do layout.
+ */
+
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
@@ -9,6 +18,10 @@ type NeuCardProps = HTMLAttributes<HTMLElement> & {
   variant?: "flat" | "raised" | "pressed";
 };
 
+// BLOCO 1 - O cartao aceita tres estilos de profundidade:
+//   raised  = com sombra, parece levantado (o padrao).
+//   pressed = parece afundado, usado em areas de destaque.
+//   flat    = so com borda, quando a tela ja tem muita sombra.
 export function NeuCard({
   as: Component = "section",
   title,
@@ -30,6 +43,9 @@ export function NeuCard({
       )}
       {...props}
     >
+      {/* BLOCO 2 - O cabecalho so e desenhado se houver titulo, descricao ou
+          botao. Sem isso, um cartao usado apenas como caixa ficaria com um
+          espaco vazio no topo. */}
       {(title || description || action) && (
         <header className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>

@@ -1,3 +1,12 @@
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * Desenha a logo do Web Complaint com o nome do projeto ao lado.
+ * Aparece no topo das telas publicas e do painel.
+ *
+ * Para a apresentacao: pode pular, e um elemento visual.
+ */
+
 import Image from "next/image";
 import { cn } from "@/lib/cn";
 
@@ -6,6 +15,10 @@ type BrandLogoProps = {
   showText?: boolean;
 };
 
+// BLOCO UNICO - A logo com o nome do projeto ao lado.
+// A imagem tem texto alternativo ("Logo do Web Complaint") para quem usa
+// leitor de tela, e o "priority" pede ao navegador que a carregue primeiro,
+// por ser a primeira coisa visivel no topo da pagina.
 export function BrandLogo({ className, showText = true }: BrandLogoProps) {
   return (
     <div className={cn("flex min-h-11 items-center gap-3", className)}>

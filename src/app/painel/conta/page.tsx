@@ -1,7 +1,18 @@
+/**
+ * O QUE ESTE ARQUIVO FAZ
+ *
+ * Tela simples com o nome e o e-mail de quem esta logado e o botao de sair.
+ *
+ * Para a apresentacao: use para mostrar quem esta usando o painel.
+ */
+
 import { LogoutButton } from "@/components/auth/logout-button";
 import { getPainelSession } from "@/lib/server-auth";
 
 export default async function ContaPage() {
+  // Le o cracha de quem esta logado para mostrar nome e e-mail na tela.
+  // E util em computadores compartilhados da secretaria: antes de agir em um
+  // caso, a pessoa confere de quem e a sessao aberta ali.
   const session = await getPainelSession();
 
   return (
