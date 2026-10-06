@@ -31,6 +31,7 @@ import { ZodError } from "zod";
 import { formatZodError } from "@/lib/api-response";
 import { gerarProtocolo } from "@/lib/protocolo";
 import { prisma } from "@/lib/prisma";
+import { allowRequest } from "@/lib/rate-limit";
 import { criarDenunciaSchema } from "@/lib/validacoes";
 import { enviarVerificacao } from "@/lib/verificacao-email";
 
@@ -154,9 +155,21 @@ export async function POST(request: Request) {
     // Os avisos de andamento so serao enviados depois que a pessoa clicar no
     // link. Fica fora da transacao de proposito: uma falha no e-mail nunca
     // impede a denuncia de ser registrada.
+    //
+    // Esta rota e publica, entao ha um limite de envios: sem ele, um robo
+    // poderia registrar denuncias falsas so para despejar e-mails da escola na
+    // caixa de outra pessoa. Sao no maximo 5 links por hora vindos do mesmo
+    // endereco de internet e 3 por dia para o mesmo e-mail. Passou do limite,
+    // a denuncia e gravada normalmente, apenas sem o link de confirmacao.
     let verificacaoEnviada = false;
+    const forwardedFor = request.headers.get("x-forwarded-for");
+    const clientIp = forwardedFor?.split(",")[0]?.trim() || "local";
+    const podeEnviar =
+      denuncia.denuncianteEmail &&
+      allowRequest(`verificacao-denunciante-ip:${clientIp}`, 5, 60 * 60 * 1000).allowed &&
+      allowRequest(`verificacao-denunciante-email:${denuncia.denuncianteEmail.toLowerCase()}`, 3, 24 * 60 * 60 * 1000).allowed;
 
-    if (denuncia.denuncianteEmail) {
+    if (podeEnviar && denuncia.denuncianteEmail) {
       try {
         await enviarVerificacao({
           tipo: "DENUNCIANTE",
