@@ -39,8 +39,11 @@ export const anexoSchema = z.object({
   // So aceita enderecos no formato que a rota de upload gera. Assim ninguem
   // consegue ligar a denuncia a um arquivo qualquer de outro lugar.
   arquivoUrl: z
-    .string()
-    .regex(/^(\/uploads\/|anexos\/)[0-9a-f-]{36}\.(jpg|jpeg|png|webp|pdf)$/, "Envie o arquivo novamente."),
+    .string({ required_error: "Um anexo não foi enviado corretamente. Remova-o e anexe o arquivo novamente." })
+    .regex(
+      /^(\/uploads\/|anexos\/)[0-9a-f-]{36}\.(jpg|jpeg|png|webp|pdf)$/,
+      "Um anexo não foi enviado corretamente. Remova-o e anexe o arquivo novamente."
+    ),
   nomeOriginal: z.string().min(1, "Informe o nome do arquivo."),
   tipoMime: z.string().min(1, "Informe o tipo do arquivo."),
   tamanho: z.number().int().positive("O arquivo precisa ter tamanho válido.").max(10 * 1024 * 1024)

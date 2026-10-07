@@ -306,9 +306,17 @@ export function DenunciaForm() {
 
       // O servidor recusou: aproveita a lista de campos com problema que ele
       // devolveu e marca cada um em vermelho na tela.
+      // Nem todo campo tem um lugar para mostrar o erro (os anexos, por
+      // exemplo). Por isso as mensagens dos campos tambem vao para o aviso do
+      // topo: a pessoa sempre fica sabendo o que precisa corrigir.
       if (!response.ok) {
-        setFieldErrors(result.campos ?? {});
-        throw new Error(result.erro ?? "Não foi possível enviar a denúncia agora.");
+        const campos: Record<string, string> = result.campos ?? {};
+        const motivos = Array.from(new Set(Object.values(campos)));
+
+        setFieldErrors(campos);
+        throw new Error(
+          [result.erro ?? "Não foi possível enviar a denúncia agora.", ...motivos].join(" ")
+        );
       }
 
       // DEU CERTO. Guarda o protocolo na memoria temporaria da aba e leva a
