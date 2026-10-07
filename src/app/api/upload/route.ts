@@ -15,12 +15,14 @@
  * do sistema. O nome original fica guardado apenas como texto, para ser
  * exibido na tela.
  *
+ * Onde o arquivo e guardado (Supabase Storage ou disco local) fica a cargo
+ * de lib/anexos-storage.ts.
+ *
  * Para a apresentacao: e o tratamento seguro de arquivos enviados.
  */
 
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { NextResponse } from "next/server";
+import { salvarAnexo } from "@/lib/anexos-storage";
 
 // BLOCO 1 - As tres regras fixas de aceitacao de arquivos.
 // Note que existem DUAS listas para a mesma coisa. A primeira olha o final do
@@ -32,7 +34,7 @@ const allowedExtensions = new Set(["jpg", "jpeg", "png", "webp", "pdf"]);
 const allowedMimeTypes = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
 
 // Avisa ao Next.js que esta rota roda no servidor completo, e nao na versao
-// reduzida. E necessario porque mais abaixo o codigo grava arquivos em disco.
+// reduzida. E necessario porque o arquivo e lido e repassado como bytes.
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
@@ -72,7 +74,7 @@ export async function POST(request: Request) {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
-  // BLOCO 5 - Define onde e com que nome o arquivo sera salvo.
+  // BLOCO 5 - Define com que nome o arquivo sera salvo.
   //
   // ESTA E A PROTECAO MAIS IMPORTANTE DO ARQUIVO: o nome original e
   // DESCARTADO e substituido por um codigo sorteado (randomUUID).
@@ -81,20 +83,28 @@ export async function POST(request: Request) {
   // Alguem poderia enviar um arquivo chamado "../../config.js" e, sem esse
   // cuidado, o sistema tentaria grava-lo por cima de um arquivo do proprio
   // site. Com o nome sorteado, o arquivo enviado nunca escolhe onde cai.
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
   const fileName = `${crypto.randomUUID()}.${extension}`;
-  const filePath = path.join(uploadDir, fileName);
 
-  // BLOCO 6 - Cria a pasta se ela ainda nao existir e grava o arquivo.
-  await mkdir(uploadDir, { recursive: true });
-  await writeFile(filePath, buffer);
+  // BLOCO 6 - Guarda o arquivo. Se o armazenamento falhar, devolve uma
+  // mensagem clara em vez de deixar o envio quebrar sem resposta.
+  let url: string;
+
+  try {
+    url = await salvarAnexo(fileName, buffer, file.type);
+  } catch (error) {
+    console.error("[upload] falha ao guardar anexo", error);
+    return NextResponse.json(
+      { erro: "Não foi possível guardar o arquivo agora. Tente novamente em instantes." },
+      { status: 500 }
+    );
+  }
 
   // BLOCO 7 - Devolve os dados do arquivo salvo.
   // O nome original volta apenas como TEXTO, para ser exibido na tela da
   // equipe. Ele nunca e usado para localizar o arquivo no disco.
   return NextResponse.json(
     {
-      url: `/uploads/${fileName}`,
+      url,
       nomeOriginal: file.name,
       tipoMime: file.type,
       tamanho: file.size

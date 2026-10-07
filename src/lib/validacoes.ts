@@ -36,7 +36,11 @@ export const protocoloSchema = z.object({
 // O limite de 10 * 1024 * 1024 e exatamente 10 MB, escrito assim para deixar
 // claro de onde vem a conta.
 export const anexoSchema = z.object({
-  arquivoUrl: z.string().min(1, "Envie o arquivo novamente."),
+  // So aceita enderecos no formato que a rota de upload gera. Assim ninguem
+  // consegue ligar a denuncia a um arquivo qualquer de outro lugar.
+  arquivoUrl: z
+    .string()
+    .regex(/^(\/uploads\/|anexos\/)[0-9a-f-]{36}\.(jpg|jpeg|png|webp|pdf)$/, "Envie o arquivo novamente."),
   nomeOriginal: z.string().min(1, "Informe o nome do arquivo."),
   tipoMime: z.string().min(1, "Informe o tipo do arquivo."),
   tamanho: z.number().int().positive("O arquivo precisa ter tamanho válido.").max(10 * 1024 * 1024)

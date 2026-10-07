@@ -29,6 +29,7 @@ import {
   statusLabelMap,
   statusUiMap
 } from "@/lib/denuncias";
+import { gerarLinksAnexos } from "@/lib/anexos-storage";
 import { prisma } from "@/lib/prisma";
 
 type PainelDenunciaDetalhePageProps = {
@@ -87,6 +88,10 @@ export default async function PainelDenunciaDetalhePage({ params }: PainelDenunc
     notFound();
   }
 
+  // Os anexos ficam em uma pasta privada: cada um ganha aqui um link
+  // temporario, valido por 1 hora, que so a equipe logada recebe.
+  const linksAnexos = await gerarLinksAnexos(denuncia.anexos.map((anexo) => anexo.arquivoUrl));
+
   // BLOCO 2 - Transforma o historico do banco nos itens da linha do tempo.
   // O titulo de cada item e escolhido conforme o que aquele registro e:
   //   houve mudanca de status -> "Status atualizado para ...";
@@ -144,28 +149,29 @@ export default async function PainelDenunciaDetalhePage({ params }: PainelDenunc
           <NeuCard title="Anexos" description="Arquivos enviados pelo denunciante.">
             {denuncia.anexos.length > 0 ? (
               <div className="grid gap-4 sm:grid-cols-2">
-                {denuncia.anexos.map((anexo) => (
+                {denuncia.anexos.map((anexo, indice) => (
                   <a
                     key={anexo.id}
                     className="rounded-calm bg-base p-3 shadow-neuro-sm"
-                    href={anexo.arquivoUrl}
+                    href={linksAnexos[indice] ?? undefined}
                     target="_blank"
                     rel="noreferrer"
                   >
                     {/* Sendo imagem, mostra a previa; sendo PDF, mostra uma
                         caixa escrita PDF. Assim a equipe reconhece o tipo do
                         anexo antes de abrir. */}
-                    {anexo.tipoMime.startsWith("image/") ? (
+                    {anexo.tipoMime.startsWith("image/") && linksAnexos[indice] ? (
                       <Image
                         alt={`Anexo ${anexo.nomeOriginal}`}
                         className="aspect-video w-full rounded-soft object-cover"
                         height={180}
-                        src={anexo.arquivoUrl}
+                        src={linksAnexos[indice]!}
+                        unoptimized
                         width={320}
                       />
                     ) : (
                       <div className="flex aspect-video items-center justify-center rounded-soft bg-sand-100 text-center font-bold text-ocean-900">
-                        PDF
+                        {anexo.tipoMime.startsWith("image/") ? "Imagem indisponível" : "PDF"}
                       </div>
                     )}
                     <p className="mt-3 truncate text-sm font-bold">{anexo.nomeOriginal}</p>
