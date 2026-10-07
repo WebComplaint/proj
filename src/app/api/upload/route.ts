@@ -100,11 +100,14 @@ export async function POST(request: Request) {
   }
 
   // BLOCO 7 - Devolve os dados do arquivo salvo.
+  // Os nomes dos campos sao os mesmos da ficha do anexo (arquivoUrl,
+  // nomeOriginal, tipoMime, tamanho): o formulario repassa esta resposta
+  // inteira para a rota de denuncia, que confere exatamente esses campos.
   // O nome original volta apenas como TEXTO, para ser exibido na tela da
   // equipe. Ele nunca e usado para localizar o arquivo no disco.
   return NextResponse.json(
     {
-      url,
+      arquivoUrl: url,
       nomeOriginal: file.name,
       tipoMime: file.type,
       tamanho: file.size

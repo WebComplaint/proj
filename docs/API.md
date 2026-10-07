@@ -140,7 +140,8 @@ POST /api/upload
 
 **Quem pode usar:** qualquer pessoa, sem login.
 
-**O que faz:** recebe uma foto ou um PDF e guarda no servidor.
+**O que faz:** recebe uma foto ou um PDF e guarda em uma pasta privada do
+Supabase Storage. A equipe abre o anexo pelo painel, com um link que vale 1 hora.
 
 **Regras de aceitação:**
 
@@ -159,7 +160,8 @@ poderia enviar um arquivo com nome malicioso e tentar sobrescrever partes do
 próprio sistema. O nome original fica guardado apenas como texto, para ser
 exibido na tela da equipe.
 
-**Possíveis respostas:** 201 (criado), 400 (formato ou tamanho recusado).
+**Possíveis respostas:** 201 (criado), 400 (formato ou tamanho recusado), 500
+(falha ao guardar o arquivo).
 
 ---
 
