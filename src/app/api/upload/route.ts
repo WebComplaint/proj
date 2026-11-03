@@ -22,7 +22,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { salvarAnexo } from "@/lib/anexos-storage";
+import { ErroArmazenamento, salvarAnexo } from "@/lib/anexos-storage";
 
 // BLOCO 1 - As tres regras fixas de aceitacao de arquivos.
 // Note que existem DUAS listas para a mesma coisa. A primeira olha o final do
@@ -92,9 +92,16 @@ export async function POST(request: Request) {
   try {
     url = await salvarAnexo(fileName, buffer, file.type);
   } catch (error) {
-    console.error("[upload] falha ao guardar anexo", error);
+    // O codigo curto vai tambem na resposta: nao revela nada sensivel e
+    // permite saber o que falhou sem precisar abrir os logs do servidor.
+    const codigo = error instanceof ErroArmazenamento ? error.codigo : "storage_desconhecido";
+    console.error("[upload] falha ao guardar anexo", {
+      codigo,
+      nome: error instanceof Error ? error.name : typeof error,
+      mensagem: error instanceof Error ? error.message : String(error)
+    });
     return NextResponse.json(
-      { erro: "Não foi possível guardar o arquivo agora. Tente novamente em instantes." },
+      { erro: "Não foi possível guardar o arquivo agora. Tente novamente em instantes.", codigo },
       { status: 500 }
     );
   }

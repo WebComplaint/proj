@@ -44,29 +44,37 @@ function getStorageAdmin() {
   return createClient(url, chave, { auth: { persistSession: false, autoRefreshToken: false } }).storage;
 }
 
+// Erro de armazenamento com um codigo curto (ex.: "storage_403"), sem dado
+// sensivel nenhum, para a rota registrar e devolver. Sem ele, toda falha
+// virava a mesma mensagem generica e nao dava para saber o que quebrou.
+export class ErroArmazenamento extends Error {
+  constructor(public codigo: string, mensagem: string) {
+    super(mensagem);
+    this.name = "ErroArmazenamento";
+  }
+}
+
 // BLOCO 3 - Guarda o arquivo e devolve o endereco que vai para o banco.
+// A pasta "anexos" e criada pela migration 20261103120000_bucket_anexos.
 export async function salvarAnexo(nomeArquivo: string, conteudo: Buffer, tipoMime: string) {
   const storage = getStorageAdmin();
 
   if (storage) {
-    const enviar = () => storage.from(BUCKET).upload(nomeArquivo, conteudo, { contentType: tipoMime, upsert: false });
-    let { error } = await enviar();
+    const { error } = await storage
+      .from(BUCKET)
+      .upload(nomeArquivo, conteudo, { contentType: tipoMime, upsert: false });
 
-    // Primeira vez: a pasta privada ainda nao existe. Cria e tenta de novo.
-    if (error && /bucket not found/i.test(error.message)) {
-      const criacao = await storage.createBucket(BUCKET, { public: false });
-      if (criacao.error && !/already exists/i.test(criacao.error.message)) throw criacao.error;
-      ({ error } = await enviar());
+    if (error) {
+      const status = "statusCode" in error ? String(error.statusCode) : "status" in error ? String(error.status) : "erro";
+      throw new ErroArmazenamento(`storage_${status}`, error.message);
     }
-
-    if (error) throw error;
 
     return `${PREFIXO_STORAGE}${nomeArquivo}`;
   }
 
   // Na Vercel, sem a chave, nao ha onde guardar: melhor avisar do que fingir.
   if (process.env.VERCEL) {
-    throw new Error("Armazenamento de anexos não configurado (SUPABASE_SECRET_KEY).");
+    throw new ErroArmazenamento("storage_nao_configurado", "Armazenamento de anexos não configurado (SUPABASE_SECRET_KEY).");
   }
 
   const pasta = path.join(process.cwd(), "public", "uploads");
