@@ -65,7 +65,8 @@ export async function salvarAnexo(nomeArquivo: string, conteudo: Buffer, tipoMim
       .upload(nomeArquivo, conteudo, { contentType: tipoMime, upsert: false });
 
     if (error) {
-      const status = "statusCode" in error ? String(error.statusCode) : "status" in error ? String(error.status) : "erro";
+      const detalhes = error as { statusCode?: string | number; status?: string | number };
+      const status = String(detalhes.statusCode ?? detalhes.status ?? "erro");
       throw new ErroArmazenamento(`storage_${status}`, error.message);
     }
 
