@@ -10,7 +10,7 @@
  *   1. Relato   -> categoria e descricao (as unicas obrigatorias).
  *   2. Detalhes -> data, local e envolvidos (tudo opcional).
  *   3. Provas   -> ate 5 arquivos de 10 MB (opcional).
- *   4. Envio    -> anonima ou identificada, e o aceite dos termos.
+ *   4. Envio    -> anonima ou identificada, telefone e o aceite do termo.
  *
  * Por que dividir em etapas? Uma tela unica com 10 campos assusta quem ja
  * esta nervoso para denunciar. Perguntas curtas, uma de cada vez, reduzem
@@ -18,8 +18,9 @@
  *
  * Duas decisoes que valem citar na apresentacao:
  *
- *   - Os campos de nome, e-mail e telefone so aparecem na tela DEPOIS que a
- *     pessoa escolhe se identificar. Na opcao anonima eles nao existem.
+ *   - Os campos de nome e e-mail so aparecem na tela DEPOIS que a pessoa
+ *     escolhe se identificar. Na opcao anonima eles nao existem. O telefone
+ *     e obrigatorio nas duas opcoes; na anonima, so o administrador o ve.
  *
  *   - A conferencia dos campos e feita duas vezes: aqui, para avisar rapido
  *     sem recarregar a pagina, e de novo no servidor. A daqui e conforto;
@@ -32,6 +33,7 @@
  */
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CategoriaCard,
@@ -45,6 +47,8 @@ import {
   StepIndicator
 } from "@/components/ui";
 import { categoriasIniciais } from "@/lib/categorias";
+import { DATA_MINIMA_OCORRIDO, FOLGA_RELOGIO_MS, toLocalInputValue } from "@/lib/date-utils";
+import { formatarTelefone, telefoneValido } from "@/lib/telefone";
 
 // BLOCO 1 - O formato de um arquivo que ja foi enviado com sucesso.
 type UploadedFile = {
@@ -152,10 +156,29 @@ export function DenunciaForm() {
       }
     }
 
-    // Etapa 4 (Envio): o e-mail so e cobrado de quem escolheu se identificar,
-    // e o aceite dos termos e sempre obrigatorio.
-    // As etapas 2 e 3 nao aparecem aqui porque sao inteiramente opcionais.
+    // Etapa 2 (Detalhes): a data e opcional, mas nao pode estar no futuro.
+    // O campo ja bloqueia os dias futuros no calendario; esta conferencia
+    // pega quem digitou a data a mao.
+    if (step === 1 && form.dataOcorrido) {
+      const data = new Date(form.dataOcorrido);
+
+      if (Number.isNaN(data.getTime()) || data < new Date(DATA_MINIMA_OCORRIDO)) {
+        errors.dataOcorrido = "Confira a data do ocorrido.";
+      } else if (data.getTime() > Date.now() + FOLGA_RELOGIO_MS) {
+        errors.dataOcorrido = "A data do ocorrido não pode ser no futuro. Informe uma data até hoje.";
+      }
+    }
+
+    // Etapa 4 (Envio): o telefone e cobrado de todos, o e-mail so de quem
+    // escolheu se identificar, e o aceite do termo e sempre obrigatorio.
+    // A etapa 3 nao aparece aqui porque e inteiramente opcional.
     if (step === 3) {
+      if (!form.denuncianteTelefone.trim()) {
+        errors.denuncianteTelefone = "Informe um telefone com DDD para enviar a denúncia.";
+      } else if (!telefoneValido(form.denuncianteTelefone)) {
+        errors.denuncianteTelefone = "Informe um telefone válido com DDD, por exemplo (11) 91234-5678.";
+      }
+
       if (!form.anonima && !form.denuncianteEmail.trim()) {
         errors.denuncianteEmail = "Informe um e-mail para receber atualizações da denúncia identificada.";
       }
@@ -293,12 +316,14 @@ export function DenunciaForm() {
 
           // A REGRA DO ANONIMATO, aplicada tambem aqui.
           // Leia: "se for anonima, mande vazio; senao, mande o valor".
-          // Sendo anonima, os dados pessoais nem saem do navegador da pessoa.
+          // Sendo anonima, nome e e-mail nem saem do navegador da pessoa.
           // O servidor repete essa mesma regra na hora de gravar, entao a
           // protecao existe nas duas pontas.
           denuncianteNome: form.anonima ? null : form.denuncianteNome || null,
           denuncianteEmail: form.anonima ? null : form.denuncianteEmail || null,
-          denuncianteTelefone: form.anonima ? null : form.denuncianteTelefone || null,
+
+          // O telefone vai sempre: e obrigatorio nas duas opcoes.
+          denuncianteTelefone: form.denuncianteTelefone,
           aceiteTermos: form.aceiteTermos
         })
       });
@@ -397,17 +422,23 @@ export function DenunciaForm() {
               </p>
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
+              {/* O "max" e o momento atual: o calendario nao deixa escolher
+                  um dia futuro. O "min" barra erro de digitacao no ano. */}
               <NeuInput
                 label="Data e horário aproximados"
                 name="dataOcorrido"
                 type="datetime-local"
+                min={DATA_MINIMA_OCORRIDO}
+                max={toLocalInputValue(new Date())}
                 value={form.dataOcorrido}
                 onChange={(event) => updateField("dataOcorrido", event.target.value)}
+                hint="Do dia do ocorrido até hoje. Datas futuras não são aceitas."
+                error={fieldErrors.dataOcorrido}
               />
               <NeuInput
                 label="Local"
                 name="local"
-                placeholder="Sala, pátio, online..."
+                placeholder="Sala, pátio, internet..."
                 value={form.local}
                 onChange={(event) => updateField("local", event.target.value)}
               />
@@ -480,7 +511,7 @@ export function DenunciaForm() {
                 >
                   <span className="block text-lg font-bold">Denunciar anonimamente</span>
                   <span className="mt-2 block text-sm leading-6 text-text-secondary">
-                    Nenhum campo pessoal será exibido ou enviado.
+                    Seu nome e e-mail não são pedidos. Só o telefone, visível apenas para a administração.
                   </span>
                 </button>
                 <button
@@ -499,10 +530,10 @@ export function DenunciaForm() {
               </div>
             </fieldset>
 
-            {/* OS CAMPOS PESSOAIS SO EXISTEM AQUI DENTRO.
+            {/* OS CAMPOS DE NOME E E-MAIL SO EXISTEM AQUI DENTRO.
                 Leia a condicao: "se NAO for anonima, mostre este bloco".
-                Na opcao anonima, nome, e-mail e telefone nem chegam a ser
-                desenhados na tela. Nao estao escondidos: nao existem.
+                Na opcao anonima, nome e e-mail nem chegam a ser desenhados na
+                tela. Nao estao escondidos: nao existem.
                 Este e um bom trecho para mostrar na apresentacao. */}
             {!form.anonima && (
               <div className="grid gap-5 sm:grid-cols-2">
@@ -522,21 +553,55 @@ export function DenunciaForm() {
                   onChange={(event) => updateField("denuncianteEmail", event.target.value)}
                   error={fieldErrors.denuncianteEmail}
                 />
-                <div className="sm:col-span-2">
-                  <NeuInput
-                    label="Telefone"
-                    name="denuncianteTelefone"
-                    placeholder="Opcional"
-                    value={form.denuncianteTelefone}
-                    onChange={(event) => updateField("denuncianteTelefone", event.target.value)}
-                  />
-                </div>
               </div>
             )}
 
+            {/* O TELEFONE fica fora do bloco acima porque e obrigatorio nas
+                duas opcoes. A mascara monta (11) 91234-5678 enquanto a pessoa
+                digita, e a dica muda conforme a opcao escolhida, deixando
+                claro quem vai ver o numero. */}
+            <NeuInput
+              label="Telefone com DDD"
+              name="denuncianteTelefone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="(11) 91234-5678"
+              maxLength={15}
+              value={form.denuncianteTelefone}
+              onChange={(event) => updateField("denuncianteTelefone", formatarTelefone(event.target.value))}
+              hint={
+                form.anonima
+                  ? "Obrigatório. Na denúncia anônima, o telefone fica visível apenas para a administração da escola e só é usado se for preciso esclarecer o caso ou proteger alguém."
+                  : "Obrigatório. Usado pela equipe da escola para entrar em contato sobre o caso."
+              }
+              error={fieldErrors.denuncianteTelefone}
+            />
+
+            {/* O TERMO DE CONSENTIMENTO, resumido no ponto em que a pessoa
+                decide. Os links abrem em outra aba de proposito: sair desta
+                pagina apagaria tudo o que ja foi preenchido. */}
+            <section className="rounded-soft bg-base p-4 text-sm leading-6 text-text-secondary shadow-neuro-inset" aria-labelledby="resumo-termo">
+              <h3 id="resumo-termo" className="font-bold text-text-primary">Termo de consentimento e privacidade</h3>
+              <ul className="mt-2 grid list-disc gap-1 pl-5">
+                <li>Seus dados serão usados apenas para registrar, apurar e acompanhar esta denúncia.</li>
+                <li>Somente a equipe autorizada da escola acessa o caso.</li>
+                <li>Na denúncia anônima, nome e e-mail não são coletados, e o telefone fica restrito à administração.</li>
+                <li>Você pode pedir acesso, correção ou exclusão dos seus dados à escola, informando o protocolo.</li>
+              </ul>
+              <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+                <Link className="font-bold text-text-primary underline" href="/termo-de-consentimento" target="_blank" rel="noopener">
+                  Ler o termo de consentimento completo
+                </Link>
+                <Link className="font-bold text-text-primary underline" href="/privacidade" target="_blank" rel="noopener">
+                  Ler a política de privacidade
+                </Link>
+              </p>
+            </section>
+
             <NeuCheckbox
               name="aceiteTermos"
-              label="Aceito o termo de consentimento e a política de privacidade"
+              label="Li e aceito o termo de consentimento e a política de privacidade"
               description="O envio só acontece depois deste aceite."
               checked={form.aceiteTermos}
               onChange={(event) => updateField("aceiteTermos", event.target.checked)}
@@ -574,5 +639,5 @@ function formatFileSize(size: number) {
     return `${Math.round(size / 1024)} KB`;
   }
 
-  return `${(size / 1024 / 1024).toFixed(1)} MB`;
+  return `${(size / 1024 / 1024).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MB`;
 }

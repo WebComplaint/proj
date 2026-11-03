@@ -45,13 +45,13 @@ export default async function CategoriasPage() {
         </p>
       </section>
 
-      <NeuCard title="Criar categoria" description="Use slugs estáveis, porque eles são usados por filtros e integrações.">
+      <NeuCard title="Criar categoria" description="Use identificadores estáveis, porque eles são usados nos filtros do painel.">
         <CategoriaForm />
       </NeuCard>
 
       <section className="grid gap-4">
         {categorias.map((categoria) => (
-          <NeuCard key={categoria.id} title={categoria.nome} description={categoria.slug}>
+          <NeuCard key={categoria.id} title={categoria.nome} description={`Identificador: ${categoria.slug}`}>
             {/* BLOCO 3 - As tres etiquetas de cada categoria: a prioridade
                 inicial, se esta ativa ou inativa, e a posicao no formulario.
                 Sao as tres informacoes que a escola costuma querer conferir

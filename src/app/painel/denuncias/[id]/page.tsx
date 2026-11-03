@@ -13,7 +13,8 @@
  * E a mesma informacao com dois niveis de visibilidade.
  *
  * O bloco "Denunciante" so exibe nome, e-mail e telefone quando a denuncia
- * NAO e anonima. Sendo anonima, ele mostra apenas a etiqueta Anonima.
+ * NAO e anonima. Sendo anonima, ele mostra a etiqueta Anonima e, apenas para
+ * o administrador, o telefone de contato.
  */
 
 import Image from "next/image";
@@ -30,7 +31,9 @@ import {
   statusUiMap
 } from "@/lib/denuncias";
 import { gerarLinksAnexos } from "@/lib/anexos-storage";
+import { isAdmin } from "@/lib/permissoes";
 import { prisma } from "@/lib/prisma";
+import { getPainelSession } from "@/lib/server-auth";
 
 type PainelDenunciaDetalhePageProps = {
   params: {
@@ -42,7 +45,7 @@ export default async function PainelDenunciaDetalhePage({ params }: PainelDenunc
   // BLOCO 1 - Duas consultas ao mesmo tempo:
   //   1. a denuncia completa, com categoria, responsavel, anexos e historico;
   //   2. a lista de usuarios ativos, para preencher o campo "Responsavel".
-  const [denuncia, responsaveis] = await Promise.all([
+  const [denuncia, responsaveis, session] = await Promise.all([
     prisma.denuncia.findUnique({
       where: { id: params.id },
       include: {
@@ -80,7 +83,8 @@ export default async function PainelDenunciaDetalhePage({ params }: PainelDenunc
         id: true,
         nome: true
       }
-    })
+    }),
+    getPainelSession()
   ]);
 
   // Caso inexistente, ou identificador digitado errado: mostra a pagina 404.
@@ -227,16 +231,28 @@ export default async function PainelDenunciaDetalhePage({ params }: PainelDenunc
           </NeuCard>
 
           {/* BLOCO 4 - OS DADOS DO DENUNCIANTE.
-              Sendo anonima, aparece apenas a etiqueta "Anônima". Nao ha nada
-              escondido nem oculto atras de um botao: o banco simplesmente nao
-              guardou nome, e-mail nem telefone nesse caso.
+              Sendo anonima, o banco nao guardou nome nem e-mail. O unico dado
+              guardado e o telefone, obrigatorio, e ele so aparece para o
+              ADMINISTRADOR. Professores, coordenadores e diretores veem apenas
+              a etiqueta "Anônima", como antes.
               Sendo identificada, os tres campos aparecem para a equipe entrar
               em contato. Este e um bom trecho para mostrar na apresentacao. */}
           <NeuCard title="Denunciante">
             {denuncia.anonima ? (
-              <span className="inline-flex min-h-8 items-center rounded-full bg-[#D8E4E6] px-3 text-sm font-bold text-ink-600">
-                Anônima
-              </span>
+              <div className="grid gap-4">
+                <span className="inline-flex min-h-8 w-fit items-center rounded-full bg-[#D8E4E6] px-3 text-sm font-bold text-ink-600">
+                  Anônima
+                </span>
+                {isAdmin(session?.user.perfil) ? (
+                  <dl className="grid gap-4">
+                    <InfoItem label="Telefone (visível só para administradores)" value={denuncia.denuncianteTelefone || "Não informado"} />
+                  </dl>
+                ) : (
+                  <p className="text-sm leading-6 text-text-secondary">
+                    O telefone de contato desta denúncia fica restrito à administração.
+                  </p>
+                )}
+              </div>
             ) : (
               <dl className="grid gap-4">
                 <InfoItem label="Nome" value={denuncia.denuncianteNome || "Não informado"} />

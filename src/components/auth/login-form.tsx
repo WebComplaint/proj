@@ -16,6 +16,7 @@
  * Para a apresentacao: seguranca tambem esta na mensagem de erro.
  */
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { NeuButton, NeuInput } from "@/components/ui";
@@ -82,7 +83,7 @@ export function LoginForm() {
         autoComplete="email"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
-        placeholder="admin@escola.local"
+        placeholder="seu.nome@escola.com.br"
         required
       />
       <NeuInput
@@ -98,6 +99,10 @@ export function LoginForm() {
       <NeuButton className="w-full" loading={loading} size="lg" type="submit">
         Entrar no painel
       </NeuButton>
+      {/* Quem esqueceu a senha pede um link por e-mail para criar outra. */}
+      <Link className="text-center text-sm font-bold text-text-secondary underline" href="/esqueci-senha">
+        Esqueci minha senha
+      </Link>
     </form>
   );
 }

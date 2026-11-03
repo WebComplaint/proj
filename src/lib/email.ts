@@ -17,6 +17,7 @@
  */
 
 import type { StatusDenuncia } from "@prisma/client";
+import { getAppUrl } from "@/lib/app-url";
 import { statusLabelMap } from "@/lib/denuncias";
 
 // BLOCO 1 - O conteudo de um e-mail: para quem, com que assunto e qual texto.
@@ -155,11 +156,9 @@ export async function notifyPublicResponse({
 }
 
 // BLOCO 6 - Monta o link de acompanhamento que vai dentro do e-mail.
-// O replace tira a barra sobrando do fim do endereco, evitando o link torto
-// "site.com//acompanhar". O encodeURIComponent trata caracteres especiais.
-// Sem endereco configurado, usa o endereco local, util durante os testes.
+// O endereco do site vem de getAppUrl (lib/app-url.ts), que nunca deixa um
+// "localhost" ir parar no e-mail quando o sistema roda na Vercel.
+// O encodeURIComponent trata caracteres especiais do protocolo.
 function getPublicProtocolUrl(protocolo: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
-  return `${baseUrl.replace(/\/$/, "")}/acompanhar/${encodeURIComponent(protocolo)}`;
+  return `${getAppUrl()}/acompanhar/${encodeURIComponent(protocolo)}`;
 }

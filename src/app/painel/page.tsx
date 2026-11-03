@@ -94,7 +94,7 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
       {hasSlaAlert ? (
         <NeuCard
           className="border border-danger-600/30 bg-danger-100"
-          title="Casos fora do SLA de triagem"
+          title="Casos com triagem fora do prazo"
           description="Denúncias paradas em recebida por mais de 48 horas precisam de atenção."
           variant="flat"
         >
@@ -122,7 +122,7 @@ export default async function PainelPage({ searchParams }: PainelPageProps) {
           )}
         </NeuCard>
       ) : (
-        <NeuCard title="SLA de triagem em dia" description="Nenhuma denúncia recebida está parada há mais de 48 horas.">
+        <NeuCard title="Triagem dentro do prazo" description="Nenhuma denúncia recebida está parada há mais de 48 horas.">
           <p className="rounded-soft bg-base p-4 text-sm leading-6 text-text-secondary shadow-neuro-inset">
             Continue acompanhando novos registros para manter a triagem no prazo.
           </p>

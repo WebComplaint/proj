@@ -4,8 +4,8 @@
  * Explica, em linguagem simples, quais dados o sistema coleta e como ele
  * trata a LGPD (Lei Geral de Protecao de Dados).
  *
- * O ponto central: na denuncia anonima o sistema nao pede e nao guarda nome,
- * e-mail nem telefone. Os campos nem chegam a aparecer na tela.
+ * O ponto central: na denuncia anonima o sistema nao pede e nao guarda nome
+ * nem e-mail. O telefone e obrigatorio, mas so o administrador o ve.
  *
  * Para a apresentacao: e a tela que sustenta o discurso de privacidade.
  */
@@ -23,7 +23,7 @@ import { NeuCard } from "@/components/ui";
 const topics = [
   {
     title: "Denúncia anônima",
-    text: "Se você escolher anonimato, o sistema não pede nome, e-mail ou telefone. Esses campos nem aparecem no formulário."
+    text: "Se você escolher anonimato, o sistema não pede nome nem e-mail. O telefone com DDD é obrigatório, mas fica visível apenas para a administração da escola e só é usado se for preciso esclarecer o caso ou proteger alguém."
   },
   {
     title: "Denúncia identificada",
@@ -35,7 +35,7 @@ const topics = [
   },
   {
     title: "Acesso da equipe",
-    text: "As rotas do painel exigem login. Usuários inativos não acessam o sistema, mas permanecem no histórico do que trataram."
+    text: "O painel exige acesso com e-mail e senha. Usuários inativos não acessam o sistema, mas permanecem no histórico do que trataram."
   }
 ];
 
@@ -73,6 +73,9 @@ export default function PrivacidadePage() {
       <div className="grid gap-3 sm:flex">
         <Link className="btn-primary inline-flex min-h-11 w-full items-center justify-center px-5 py-4 sm:w-auto" href="/denunciar">
           Fazer denúncia
+        </Link>
+        <Link className="btn-secondary inline-flex min-h-11 w-full items-center justify-center px-5 py-4 sm:w-auto" href="/termo-de-consentimento">
+          Termo de consentimento
         </Link>
         <Link className="btn-secondary inline-flex min-h-11 w-full items-center justify-center px-5 py-4 sm:w-auto" href="/como-funciona">
           Como funciona

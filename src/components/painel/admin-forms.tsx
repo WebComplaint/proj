@@ -185,7 +185,7 @@ export function CategoriaForm({ categoria }: { categoria?: Categoria }) {
         {/* O "slug" e o apelido tecnico da categoria, sem acento e sem espaco.
             E ele que vai parar no endereco dos filtros do painel. Por isso o
             exemplo mostrado e violencia_fisica, e nao "Violência física". */}
-        <NeuInput label="Slug" name="slug" defaultValue={categoria?.slug} placeholder="violencia_fisica" required />
+        <NeuInput label="Identificador (sem acentos ou espaços)" name="slug" defaultValue={categoria?.slug} placeholder="violencia_fisica" required />
         <NeuInput label="Ícone" name="icone" defaultValue={categoria?.icone ?? ""} placeholder="V" />
         <NeuInput label="Ordem" name="ordem" type="number" min={0} defaultValue={categoria?.ordem ?? 0} />
         {/* A prioridade padrao define com que urgencia as denuncias desta

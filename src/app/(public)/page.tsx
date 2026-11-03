@@ -37,7 +37,7 @@ const steps = [
 const privacyCards = [
   {
     title: "Anonimato",
-    text: "Quando a denúncia é anônima, dados pessoais não são solicitados nem armazenados."
+    text: "Na denúncia anônima, nome e e-mail não são pedidos. O telefone fica restrito à administração da escola."
   },
   {
     title: "Criptografia",

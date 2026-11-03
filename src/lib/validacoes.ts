@@ -8,7 +8,9 @@
  *   - a descricao precisa ter pelo menos 20 caracteres;
  *   - no maximo 5 anexos, de ate 10 MB cada;
  *   - o protocolo precisa seguir exatamente o padrao DEN-AAAA-XXXXXX;
- *   - se a denuncia NAO for anonima, o e-mail passa a ser obrigatorio.
+ *   - o telefone com DDD e obrigatorio, anonima ou nao;
+ *   - se a denuncia NAO for anonima, o e-mail passa a ser obrigatorio;
+ *   - a data do ocorrido nao pode estar no futuro.
  *
  * As mensagens de erro estao escritas em portugues acolhedor de proposito.
  * Sao exatamente elas que aparecem na tela para quem esta denunciando.
@@ -18,6 +20,52 @@
 
 import { z } from "zod";
 import { categoriaSlugs } from "@/lib/categorias";
+import { DATA_MINIMA_OCORRIDO, FOLGA_RELOGIO_MS } from "@/lib/date-utils";
+import { formatarTelefone, telefoneValido } from "@/lib/telefone";
+
+// BLOCO 0 - AS MENSAGENS PADRAO EM PORTUGUES.
+// A biblioteca de validacao (zod) vem com mensagens em ingles, como
+// "Required" ou "Invalid enum value". Os campos abaixo ja tem mensagens
+// proprias, mas qualquer regra sem mensagem escrita cairia no ingles.
+// Este dicionario troca TODAS as mensagens padrao por frases em portugues,
+// entao nenhum texto em ingles chega a tela.
+const mensagensPtBr: z.ZodErrorMap = (issue, ctx) => {
+  switch (issue.code) {
+    case z.ZodIssueCode.invalid_type:
+      return {
+        message:
+          issue.received === "undefined" || issue.received === "null"
+            ? "Preencha este campo."
+            : "O valor informado está em um formato inválido."
+      };
+    case z.ZodIssueCode.invalid_enum_value:
+      return { message: "Escolha uma das opções disponíveis." };
+    case z.ZodIssueCode.invalid_literal:
+      return { message: "O valor informado não é permitido." };
+    case z.ZodIssueCode.invalid_string:
+      if (issue.validation === "email") return { message: "Informe um e-mail válido." };
+      if (issue.validation === "datetime") return { message: "Informe uma data válida." };
+      return { message: "O texto informado está em um formato inválido." };
+    case z.ZodIssueCode.invalid_date:
+      return { message: "Informe uma data válida." };
+    case z.ZodIssueCode.too_small:
+      if (issue.type === "string") return { message: `Use pelo menos ${issue.minimum} caracteres.` };
+      if (issue.type === "array") return { message: `Envie pelo menos ${issue.minimum} item(ns).` };
+      return { message: `Use um valor igual ou maior que ${issue.minimum}.` };
+    case z.ZodIssueCode.too_big:
+      if (issue.type === "string") return { message: `Use no máximo ${issue.maximum} caracteres.` };
+      if (issue.type === "array") return { message: `Envie no máximo ${issue.maximum} item(ns).` };
+      return { message: `Use um valor igual ou menor que ${issue.maximum}.` };
+    case z.ZodIssueCode.not_multiple_of:
+      return { message: "O número informado não é válido." };
+    case z.ZodIssueCode.unrecognized_keys:
+      return { message: "Há campos não reconhecidos no envio." };
+    default:
+      return { message: ctx.defaultError === "Required" ? "Preencha este campo." : "O valor informado é inválido." };
+  }
+};
+
+z.setErrorMap(mensagensPtBr);
 
 // BLOCO 1 - Regra do PROTOCOLO.
 // Aquele trecho entre barras e uma "expressao regular", um molde de texto.
@@ -46,7 +94,11 @@ export const anexoSchema = z.object({
     ),
   nomeOriginal: z.string().min(1, "Informe o nome do arquivo."),
   tipoMime: z.string().min(1, "Informe o tipo do arquivo."),
-  tamanho: z.number().int().positive("O arquivo precisa ter tamanho válido.").max(10 * 1024 * 1024)
+  tamanho: z
+    .number()
+    .int()
+    .positive("O arquivo precisa ter tamanho válido.")
+    .max(10 * 1024 * 1024, "O arquivo passa de 10 MB. Escolha um menor ou reduza a qualidade da imagem.")
 });
 
 // BLOCO 3 - Regra da DENUNCIA NOVA. E a validacao mais importante do sistema,
@@ -54,11 +106,14 @@ export const anexoSchema = z.object({
 // Campo a campo, do mais para o menos exigente:
 //   categoriaSlug -> obrigatorio, e precisa ser uma das categorias conhecidas.
 //   descricao     -> obrigatoria, minimo de 20 caracteres.
-//   dataOcorrido  -> opcional (a pessoa pode nao lembrar a data).
+//   dataOcorrido  -> opcional (a pessoa pode nao lembrar a data), mas, se
+//                    vier, precisa estar entre 2000 e o momento atual.
 //   local         -> opcional, ate 120 caracteres.
 //   envolvidos    -> opcional, ate 4000 caracteres.
 //   anexos        -> no maximo 5 arquivos.
 //   anonima       -> obrigatorio escolher sim ou nao, sem valor automatico.
+//   telefone      -> obrigatorio SEMPRE, com DDD. Na denuncia anonima ele
+//                    fica visivel apenas para o administrador.
 //   aceiteTermos  -> precisa ser exatamente verdadeiro para o envio acontecer.
 export const criarDenunciaSchema = z
   .object({
@@ -71,7 +126,19 @@ export const criarDenunciaSchema = z
       })
       .trim()
       .min(20, "Conte um pouco mais sobre o que aconteceu, com pelo menos 20 caracteres."),
-    dataOcorrido: z.string().datetime().optional().nullable(),
+    dataOcorrido: z
+      .string()
+      .datetime({ message: "Informe uma data válida para o ocorrido." })
+      .optional()
+      .nullable()
+      // Nao existe denuncia sobre algo que ainda nao aconteceu. A folga de
+      // alguns minutos cobre o relogio adiantado do computador da pessoa.
+      .refine((valor) => !valor || new Date(valor).getTime() <= Date.now() + FOLGA_RELOGIO_MS, {
+        message: "A data do ocorrido não pode ser no futuro. Informe uma data até hoje."
+      })
+      .refine((valor) => !valor || new Date(valor) >= new Date(DATA_MINIMA_OCORRIDO), {
+        message: "Confira o ano da data do ocorrido."
+      }),
     local: z.string().trim().max(120, "Use um local mais curto.").optional().nullable(),
     envolvidos: z.string().trim().max(4000, "O texto de envolvidos está muito longo.").optional().nullable(),
     anexos: z.array(anexoSchema).max(5, "Envie no máximo 5 arquivos.").default([]),
@@ -80,7 +147,16 @@ export const criarDenunciaSchema = z
     }),
     denuncianteNome: z.string().trim().max(120, "Use um nome mais curto.").optional().nullable(),
     denuncianteEmail: z.string().trim().email("Informe um e-mail válido para receber atualizações.").optional().nullable(),
-    denuncianteTelefone: z.string().trim().max(30, "Use um telefone mais curto.").optional().nullable(),
+    // Obrigatorio nas duas opcoes. O numero e guardado ja formatado, como
+    // (11) 91234-5678, para a equipe ler sem precisar decifrar.
+    denuncianteTelefone: z
+      .string({
+        required_error: "Informe um telefone com DDD para enviar a denúncia.",
+        invalid_type_error: "Informe um telefone com DDD para enviar a denúncia."
+      })
+      .trim()
+      .refine(telefoneValido, "Informe um telefone válido com DDD, por exemplo (11) 91234-5678.")
+      .transform(formatarTelefone),
     aceiteTermos: z.literal(true, {
       errorMap: () => ({ message: "Aceite o termo de consentimento e a política de privacidade para enviar." })
     })
@@ -132,8 +208,8 @@ export const painelDenunciasQuerySchema = z.preprocess(
     tipo: z.enum(["anonima", "identificada"]).optional(),
     responsavelId: z.string().trim().optional(),
     protocolo: z.string().trim().optional(),
-    inicio: z.string().trim().optional(),
-    fim: z.string().trim().optional(),
+    inicio: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe uma data válida.").optional(),
+    fim: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe uma data válida.").optional(),
     ordenarPor: z.enum(["data", "prioridade"]).default("data"),
     direcao: z.enum(["asc", "desc"]).default("desc"),
     pagina: z.coerce.number().int().positive().default(1)
@@ -178,6 +254,24 @@ export const usuarioAdminSchema = z.object({
   ativo: z.boolean().default(true)
 });
 
+// BLOCO 9b - Regras do ESQUECI MINHA SENHA.
+// O pedido leva so o e-mail. A troca leva o codigo do link e a senha nova,
+// com o mesmo minimo de 10 caracteres do cadastro de usuario.
+export const esqueciSenhaSchema = z.object({
+  email: z.string().trim().email("Informe um e-mail válido.")
+});
+
+export const redefinirSenhaSchema = z
+  .object({
+    token: z.string().trim().regex(/^[a-f0-9]{64}$/, "Link inválido ou já utilizado."),
+    senha: z.string().min(10, "Use uma senha com pelo menos 10 caracteres.").max(72, "Use uma senha com no máximo 72 caracteres."),
+    confirmacao: z.string()
+  })
+  .refine((data) => data.senha === data.confirmacao, {
+    path: ["confirmacao"],
+    message: "As duas senhas precisam ser iguais."
+  });
+
 // BLOCO 10 - Regra do cadastro de CATEGORIA.
 // O destaque e o "slug": o apelido tecnico da categoria, como violencia_fisica.
 // Ele so aceita letras minusculas, numeros e underline, sem acento e sem
@@ -189,9 +283,9 @@ export const categoriaAdminSchema = z.object({
   slug: z
     .string()
     .trim()
-    .min(2, "Informe o slug da categoria.")
-    .max(80, "Use um slug mais curto.")
-    .regex(/^[a-z0-9_]+$/, "Use apenas letras minúsculas, números e underline."),
+    .min(2, "Informe o identificador da categoria.")
+    .max(80, "Use um identificador mais curto.")
+    .regex(/^[a-z0-9_]+$/, "Use apenas letras minúsculas, números e sublinhado (_), sem acentos ou espaços."),
   descricao: z.string().trim().max(2000, "Use uma descrição mais curta.").optional().nullable(),
   icone: z.string().trim().max(4, "Use um ícone curto.").optional().nullable(),
   prioridadePadrao: z.enum(["BAIXA", "MEDIA", "ALTA", "URGENTE"]),

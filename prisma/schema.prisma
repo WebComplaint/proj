@@ -12,6 +12,7 @@
 //   Anexo     -> as fotos e PDFs enviados junto com o relato.
 //   Historico -> o diario do caso: tudo que a escola fez e quando.
 //   VerificacaoEmail -> os links que confirmam que um e-mail e de quem o informou.
+//   RedefinicaoSenha -> os links de "esqueci minha senha" da equipe.
 //
 // As listas com nomes em MAIUSCULO (enum) sao "opcoes fixas": o sistema
 // so aceita exatamente esses valores, evitando erro de digitacao.
@@ -104,6 +105,7 @@ model Usuario {
   // registros no historico.
   denunciasResponsavel Denuncia[]         @relation("Responsavel")
   verificacoesEmail    VerificacaoEmail[]
+  redefinicoesSenha    RedefinicaoSenha[]
   historicos           Historico[]
 }
 
@@ -157,10 +159,12 @@ model Denuncia {
   prioridade   Prioridade     @default(MEDIA)
 
   // OS TRES CAMPOS MAIS SENSIVEIS DO SISTEMA.
-  // Todos opcionais, e todos ficam vazios quando a denuncia e anonima.
-  // Nao e a tela que os esconde: a rota que grava a denuncia forca o valor
-  // vazio nesse caso, entao o dado pessoal nunca chega ao banco.
-  // Preenchidos SOMENTE quando anonima = false (RN-01)
+  // Nome e e-mail ficam vazios quando a denuncia e anonima: a rota que grava
+  // a denuncia forca o valor vazio nesse caso, entao o dado nunca chega ao
+  // banco. Preenchidos SOMENTE quando anonima = false (RN-01).
+  // O telefone e obrigatorio nas duas opcoes. Na denuncia anonima, so o
+  // administrador consegue ve-lo no painel. Fica opcional aqui no banco
+  // porque as denuncias antigas foram registradas sem ele.
   denuncianteNome     String?
   denuncianteEmail    String?
   denuncianteTelefone String?
@@ -270,4 +274,25 @@ model VerificacaoEmail {
 
   @@index([usuarioId])
   @@index([denunciaId])
+}
+
+// BLOCO 9 - FICHA DA REDEFINICAO DE SENHA ("esqueci minha senha").
+// Funciona como a verificacao de e-mail: o link enviado carrega um codigo
+// secreto, e o banco guarda so a impressao digital dele (tokenHash).
+// O link vale uma unica vez (usadoEm) e por apenas 1 hora (expiraEm), um
+// prazo mais curto porque ele da acesso a conta.
+model RedefinicaoSenha {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  usuarioId String
+  // O e-mail para o qual o link foi enviado. Se o administrador trocar o
+  // e-mail da pessoa depois, o link antigo deixa de valer.
+  email     String
+  expiraEm  DateTime
+  usadoEm   DateTime?
+  criadoEm  DateTime  @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
 }

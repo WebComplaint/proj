@@ -17,6 +17,7 @@
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { EmptyState, NeuCard, PrioridadeBadge, StatusBadge } from "@/components/ui";
+import { hojeEmBrasilia } from "@/lib/date-utils";
 import { formatDateTime, isTriagemAtrasada, prioridadeOptions, prioridadeUiMap, statusOptions, statusUiMap } from "@/lib/denuncias";
 import { prisma } from "@/lib/prisma";
 import { painelDenunciasQuerySchema } from "@/lib/validacoes";
@@ -31,7 +32,11 @@ export default async function PainelDenunciasPage({ searchParams = {} }: PainelD
   // BLOCO 1 - Le e confere os filtros que estao no endereco da pagina.
   // Guardar os filtros na URL, e nao na memoria da tela, tem uma vantagem
   // pratica: a equipe copia o link ja filtrado e envia para um colega.
-  const query = painelDenunciasQuerySchema.parse(flattenSearchParams(searchParams));
+  // Um endereco editado a mao (status=xyz, uma data invalida) nao derruba a
+  // pagina: os filtros sao descartados e a lista abre sem filtro nenhum.
+  const parsed = painelDenunciasQuerySchema.safeParse(flattenSearchParams(searchParams));
+  const query = parsed.success ? parsed.data : painelDenunciasQuerySchema.parse({});
+  const hoje = hojeEmBrasilia();
 
   // BLOCO 2 - Monta o filtro de busca. Cada "undefined" significa "nao filtre
   // por este campo", ou seja, os filtros deixados em branco sao ignorados.
@@ -113,11 +118,11 @@ export default async function PainelDenunciasPage({ searchParams = {} }: PainelD
           <SelectFilter label="Responsável" name="responsavelId" value={query.responsavelId} options={usuarios.map((usuario) => ({ value: usuario.id, label: usuario.nome }))} />
           <label className="grid gap-2 text-sm font-bold text-text-secondary">
             Início
-            <input className="field-inset px-4" name="inicio" type="date" defaultValue={query.inicio} />
+            <input className="field-inset px-4" name="inicio" type="date" max={query.fim ?? hoje} defaultValue={query.inicio} />
           </label>
           <label className="grid gap-2 text-sm font-bold text-text-secondary">
             Fim
-            <input className="field-inset px-4" name="fim" type="date" defaultValue={query.fim} />
+            <input className="field-inset px-4" name="fim" type="date" min={query.inicio} max={hoje} defaultValue={query.fim} />
           </label>
           <SelectFilter label="Ordenar por" name="ordenarPor" value={query.ordenarPor} options={[{ value: "data", label: "Data" }, { value: "prioridade", label: "Prioridade" }]} />
           <SelectFilter label="Direção" name="direcao" value={query.direcao} options={[{ value: "desc", label: "Mais recentes primeiro" }, { value: "asc", label: "Mais antigos primeiro" }]} />

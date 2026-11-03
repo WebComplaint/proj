@@ -36,6 +36,9 @@ export default function PublicLayout({
           <a className="rounded-soft px-3 py-2 hover:bg-white/35" href="/privacidade">
             Privacidade
           </a>
+          <a className="rounded-soft px-3 py-2 hover:bg-white/35" href="/termo-de-consentimento">
+            Termo de consentimento
+          </a>
           <a className="rounded-soft px-3 py-2 hover:bg-white/35" href="/ajuda">
             Ajuda
           </a>

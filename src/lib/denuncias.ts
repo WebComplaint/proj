@@ -140,5 +140,5 @@ export function formatFileSize(size: number) {
     return `${Math.max(1, Math.round(size / 1024))} KB`;
   }
 
-  return `${(size / 1024 / 1024).toFixed(1)} MB`;
+  return `${(size / 1024 / 1024).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MB`;
 }

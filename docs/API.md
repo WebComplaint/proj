@@ -108,13 +108,13 @@ POST /api/denuncias
 | descricao | Sim | Mínimo de 20 caracteres |
 | anonima | Sim | Verdadeiro ou falso |
 | aceiteTermos | Sim | Precisa ser verdadeiro |
-| dataOcorrido | Não | Data aproximada |
+| dataOcorrido | Não | Data aproximada, de 2000 até o momento atual (nunca no futuro) |
 | local | Não | Até 120 caracteres |
 | envolvidos | Não | Até 4000 caracteres |
 | anexos | Não | Até 5 arquivos |
 | denuncianteNome | Não | Só na denúncia identificada |
 | denuncianteEmail | Condicional | Obrigatório se identificada |
-| denuncianteTelefone | Não | Só na denúncia identificada |
+| denuncianteTelefone | Sim | Com DDD, nas duas opções. Na anônima, só o administrador vê |
 
 **O que devolve:** apenas o protocolo, e nada mais.
 
@@ -123,9 +123,12 @@ POST /api/denuncias
 ```
 
 **O ponto de privacidade para a apresentação:** sendo a denúncia anônima, o
-sistema grava nome, e-mail e telefone como vazios, mesmo que algo tenha sido
-digitado antes de a pessoa mudar de ideia. A promessa de anonimato é cumprida
-na gravação, e não escondendo campos na tela.
+sistema grava nome e e-mail como vazios, mesmo que algo tenha sido digitado
+antes de a pessoa mudar de ideia. A promessa de anonimato é cumprida na
+gravação, e não escondendo campos na tela. O telefone é obrigatório nas duas
+opções; na denúncia anônima, ele aparece no painel **somente para o
+administrador** (a tela do caso e a rota `GET /api/painel/denuncias/{id}`
+o escondem dos demais perfis).
 
 **Possíveis respostas:** 201 (criado), 400 (campo errado), 404 (categoria
 inexistente ou desativada), 500 (falha do servidor).
@@ -224,6 +227,30 @@ servidor e nunca é guardada por nós.** O sistema recebe apenas a resposta
 A mensagem de erro é sempre a mesma, "E-mail ou senha inválidos", sem revelar
 qual dos dois errou. Se dissesse "esse e-mail não existe", alguém poderia
 testar endereços até descobrir quem tem conta na escola.
+
+### 4.1. Esqueci minha senha
+
+```
+POST /api/senha/esqueci     { "email": "..." }
+POST /api/senha/redefinir   { "token": "...", "senha": "...", "confirmacao": "..." }
+```
+
+**Quem pode usar:** qualquer pessoa, porque quem esqueceu a senha ainda não
+conseguiu entrar.
+
+**Como funciona:** a tela de login tem o link "Esqueci minha senha". A pessoa
+informa o e-mail e, se ele for de uma conta ativa do painel, recebe um link
+que vale por **1 hora** e uma única vez. Ao abrir o link, ela escolhe a senha
+nova (mínimo de 10 caracteres), que é trocada pela mesma função protegida do
+banco usada no cadastro de usuários.
+
+**O cuidado de segurança:** a resposta do primeiro passo é sempre a mesma,
+exista a conta ou não. Assim ninguém descobre quem tem acesso ao painel
+testando e-mails. Há também limite de pedidos por endereço de internet e por
+e-mail.
+
+**Possíveis respostas:** 200, 400 (link inválido, expirado ou senha fraca),
+429 (muitas tentativas).
 
 ---
 
@@ -445,7 +472,8 @@ GET /api/painel/relatorios/export?inicio=2026-01-01&fim=2026-03-31
 
 **Quem pode usar:** somente o administrador.
 
-**O que devolve:** um arquivo CSV, que abre no Excel.
+**O que devolve:** uma planilha do Excel (`.xlsx`), com títulos e valores em
+português ("Em análise", "Anônima") e as datas no horário de Brasília.
 
 **As colunas da planilha:** protocolo, categoria, status, prioridade, tipo,
 responsável, data de criação e data da última atualização.
@@ -476,16 +504,19 @@ mínimo necessário é o que a LGPD chama de **minimização de dados**.
 | 8 | `/api/painel/usuarios` | GET, POST, PATCH | Administrador |
 | 9 | `/api/painel/categorias` | GET, POST, PATCH | Administrador |
 | 10 | `/api/painel/relatorios/export` | GET | Administrador |
+| 11 | `/api/senha/esqueci` | POST | Qualquer pessoa |
+| 12 | `/api/senha/redefinir` | POST | Qualquer pessoa (com o link) |
 
 ---
 
 ## Parte 6 — Perguntas que a banca costuma fazer
 
 **Como o sistema garante que a denúncia anônima é mesmo anônima?**
-A regra está na rota que grava a denúncia. Sendo anônima, os campos de nome,
-e-mail e telefone são gravados vazios, mesmo que algo tenha sido digitado
-antes. O dado pessoal não chega ao banco. Não é a tela que esconde: o dado não
-existe.
+A regra está na rota que grava a denúncia. Sendo anônima, os campos de nome
+e e-mail são gravados vazios, mesmo que algo tenha sido digitado antes. Esses
+dados não chegam ao banco. Não é a tela que esconde: o dado não existe.
+O único dado guardado é o telefone, obrigatório, e ele fica restrito ao
+administrador: a equipe que trata o caso continua vendo apenas "Anônima".
 
 **E se alguém tentar adivinhar protocolos de outras pessoas?**
 Três barreiras. O código é sorteado por um gerador criptográfico, imprevisível.

@@ -18,10 +18,12 @@
  * se a gravacao falhar no meio, nada e salvo. Nunca sobra uma denuncia pela
  * metade no banco.
  *
- * REGRA DE PRIVACIDADE: quando a denuncia e anonima, os campos de nome,
- * e-mail e telefone sao gravados como vazios (null), mesmo que algo tenha
- * sido digitado antes de a pessoa mudar de ideia. O sistema nao guarda o
- * que prometeu nao guardar.
+ * REGRA DE PRIVACIDADE: quando a denuncia e anonima, os campos de nome e
+ * e-mail sao gravados como vazios (null), mesmo que algo tenha sido digitado
+ * antes de a pessoa mudar de ideia. O sistema nao guarda o que prometeu nao
+ * guardar. O TELEFONE e a excecao, e e obrigatorio nas duas opcoes: na
+ * denuncia anonima ele so aparece para o administrador, nunca para o resto
+ * da equipe (veja a tela de detalhe do caso no painel).
  *
  * Para a apresentacao: e o coracao do sistema.
  */
@@ -109,12 +111,15 @@ export async function POST(request: Request) {
             // ESTE E O TRECHO MAIS IMPORTANTE DO ARQUIVO PARA A PRIVACIDADE.
             // Leia assim: "se for anonima, grave vazio; senao, grave o valor".
             // Mesmo que algo tenha sido digitado e a pessoa tenha voltado e
-            // escolhido anonimato depois, nada pessoal chega ao banco.
+            // escolhido anonimato depois, nome e e-mail nao chegam ao banco.
             // A promessa de anonimato e cumprida aqui, na gravacao, e nao
             // apenas escondendo os campos na tela.
             denuncianteNome: data.anonima ? null : data.denuncianteNome || null,
             denuncianteEmail: data.anonima ? null : data.denuncianteEmail,
-            denuncianteTelefone: data.anonima ? null : data.denuncianteTelefone || null,
+
+            // O telefone e gravado sempre, porque e obrigatorio nas duas
+            // opcoes. Na anonima, so o administrador consegue ve-lo.
+            denuncianteTelefone: data.denuncianteTelefone,
 
             // Grava os anexos ligados a esta denuncia, na mesma operacao.
             anexos: {
@@ -148,7 +153,7 @@ export async function POST(request: Request) {
 
       // Cinco sorteios seguidos deram codigo repetido, o que e praticamente
       // impossivel. Melhor avisar do que gravar um protocolo duplicado.
-      throw new Error("Não foi possível gerar um protocolo único. Tente novamente.");
+      throw new ErroProtocolo("Não foi possível gerar um protocolo único. Tente novamente.");
     });
 
     // BLOCO 4 - CONFIRMACAO DO E-MAIL de quem se identificou.
@@ -199,11 +204,18 @@ export async function POST(request: Request) {
 
     // Qualquer outra falha: devolve 500, o erro generico de servidor.
     // A mensagem e sempre uma frase em portugues comum. Detalhe tecnico de
-    // erro nunca vai para a tela, porque ajudaria alguem mal intencionado a
-    // entender como o sistema e feito por dentro.
+    // erro (que vem em ingles, do banco de dados) nunca vai para a tela,
+    // porque ajudaria alguem mal intencionado a entender como o sistema e
+    // feito por dentro. Ele fica so no registro do servidor.
+    console.error("[denuncias] falha ao registrar denuncia", error);
+
     return NextResponse.json(
-      { erro: error instanceof Error ? error.message : "Não foi possível enviar a denúncia agora." },
+      { erro: error instanceof ErroProtocolo ? error.message : "Não foi possível enviar a denúncia agora. Tente novamente em instantes." },
       { status: 500 }
     );
   }
 }
+
+// O unico erro cuja mensagem pode ir para a tela: ela foi escrita aqui, em
+// portugues, para a pessoa ler.
+class ErroProtocolo extends Error {}

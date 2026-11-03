@@ -47,7 +47,7 @@ export default function DesignSystemPage() {
       <main className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-8 sm:px-6">
         <header className="max-w-3xl">
           <p className="text-sm font-bold text-text-secondary">Sistema de denúncia escolar</p>
-          <h1 className="mt-2 text-4xl font-bold leading-tight sm:text-5xl">Design system</h1>
+          <h1 className="mt-2 text-4xl font-bold leading-tight sm:text-5xl">Catálogo de componentes</h1>
           <p className="mt-4 text-lg leading-8 text-text-secondary">
             Componentes base com neumorfismo híbrido, foco visível e contraste preservado.
           </p>
@@ -55,13 +55,13 @@ export default function DesignSystemPage() {
 
         <DemoSection title="Cartões">
           <div className="grid gap-4 md:grid-cols-3">
-            <NeuCard title="Flat" description="Superfície quieta." variant="flat">
+            <NeuCard title="Plano" description="Superfície quieta." variant="flat">
               <p className="text-sm text-text-secondary">Usado quando a página já tem muita profundidade.</p>
             </NeuCard>
-            <NeuCard title="Raised" description="Cartão principal." variant="raised">
+            <NeuCard title="Elevado" description="Cartão principal." variant="raised">
               <p className="text-sm text-text-secondary">Sombra dupla para superfícies importantes.</p>
             </NeuCard>
-            <NeuCard title="Pressed" description="Área rebaixada." variant="pressed">
+            <NeuCard title="Rebaixado" description="Área rebaixada." variant="pressed">
               <p className="text-sm text-text-secondary">Boa para grupos selecionados ou leituras de protocolo.</p>
             </NeuCard>
           </div>
@@ -89,7 +89,7 @@ export default function DesignSystemPage() {
               </option>
               <option>Sala</option>
               <option>Pátio</option>
-              <option>Online</option>
+              <option>Ambiente virtual</option>
             </NeuSelect>
             <NeuInput label="Campo desabilitado" name="desabilitado" placeholder="Indisponível" disabled />
             <div className="md:col-span-2">
@@ -116,7 +116,7 @@ export default function DesignSystemPage() {
           </div>
         </DemoSection>
 
-        <DemoSection title="Badges">
+        <DemoSection title="Etiquetas">
           <div className="grid gap-4">
             <div className="flex flex-wrap gap-3">
               {statuses.map((status) => (
@@ -131,17 +131,17 @@ export default function DesignSystemPage() {
           </div>
         </DemoSection>
 
-        <DemoSection title="Upload">
+        <DemoSection title="Envio de arquivos">
           <FileDropzone
             label="Anexos"
             multiple
             files={[
-              { name: "relato-print.png", size: "820 KB" },
-              { name: "mensagem.pdf", size: "1.2 MB" }
+              { name: "relato-captura.png", size: "820 KB" },
+              { name: "mensagem.pdf", size: "1,2 MB" }
             ]}
           />
           <div className="mt-5">
-            <FileDropzone label="Upload com erro" error="O arquivo passa de 10 MB. Escolha um menor ou reduza a qualidade da imagem." />
+            <FileDropzone label="Envio com erro" error="O arquivo passa de 10 MB. Escolha um menor ou reduza a qualidade da imagem." />
           </div>
         </DemoSection>
 
@@ -182,7 +182,7 @@ export default function DesignSystemPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <StatCard value="12" label="Denúncias abertas" variation="3 em análise" icon="12" />
             <StatCard value="4" label="Casos urgentes" variation="Revisão prioritária" icon="!" />
-            <StatCard value="8" label="Respostas públicas" variation="Últimos 7 dias" icon="7d" />
+            <StatCard value="8" label="Respostas públicas" variation="Últimos 7 dias" icon="7" />
           </div>
         </DemoSection>
 
@@ -202,7 +202,7 @@ export default function DesignSystemPage() {
           </div>
         </DemoSection>
 
-        <DemoSection title="Modal">
+        <DemoSection title="Janela de diálogo">
           <Modal title="Confirmar mudança de status" description="A ação será registrada no histórico somente leitura do caso.">
             <NeuTextarea label="Comentário" name="comentario-modal" placeholder="Explique o motivo da mudança." />
           </Modal>

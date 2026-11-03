@@ -49,7 +49,7 @@ O publico principal sao adolescentes de 13 a 18 anos, geralmente usando celular 
   - Detalhes opcionais
   - Provas/anexos
   - Identificacao e envio
-- Denuncia anonima sem coleta de dados pessoais.
+- Denuncia anonima sem coleta de nome e e-mail; o telefone e obrigatorio e fica visivel apenas para o administrador.
 - Denuncia identificada com e-mail obrigatorio para atualizacoes.
 - Geracao de protocolo unico e nao sequencial.
 - Tela de confirmacao com cartao de protocolo.
@@ -63,7 +63,9 @@ O publico principal sao adolescentes de 13 a 18 anos, geralmente usando celular 
 - Comentarios internos e respostas publicas.
 - Gestao de usuarios para administradores.
 - Gestao de categorias para administradores.
-- Relatorios e exportacao CSV.
+- Relatorios e exportacao para Excel (.xlsx).
+- Recuperacao de senha da equipe ("Esqueci minha senha") por link enviado por e-mail.
+- Termo de consentimento (LGPD) aceito antes do envio da denuncia.
 - Notificacoes por e-mail para denuncias identificadas.
 
 ## Stack
@@ -85,7 +87,7 @@ Nao sao usadas bibliotecas de UI prontas como MUI, Chakra ou shadcn/ui. Os compo
 
 ### Denuncia
 
-- Denuncia anonima nao coleta nem armazena nome, e-mail, telefone, IP persistido ou fingerprint.
+- Denuncia anonima nao coleta nem armazena nome, e-mail, IP persistido ou fingerprint. O telefone com DDD e obrigatorio e so o perfil ADMIN o ve no painel.
 - Toda denuncia recebe protocolo unico no formato `DEN-AAAA-XXXXXX`.
 - O protocolo usa 6 caracteres aleatorios sem ambiguos: sem `0`, `O`, `1`, `I`, `L`.
 - O protocolo e exibido uma unica vez na tela de confirmacao.
@@ -316,13 +318,13 @@ Denuncia  1--N Historico
 Usuario   1--N Historico
 ```
 
-Campos sensiveis de denunciante existem somente para denuncia identificada:
+Campos sensiveis de denunciante:
 
-- `denuncianteNome`
-- `denuncianteEmail`
-- `denuncianteTelefone`
+- `denuncianteNome` (somente denuncia identificada)
+- `denuncianteEmail` (somente denuncia identificada)
+- `denuncianteTelefone` (obrigatorio nas duas; na anonima, visivel apenas para ADMIN)
 
-Em denuncia anonima, esses campos nao devem ser preenchidos.
+Em denuncia anonima, nome e e-mail nao devem ser preenchidos.
 
 ## Rotas da aplicacao
 
@@ -397,7 +399,9 @@ Codigos usados:
 | `PATCH` | `/api/painel/denuncias/[id]` | Coordenador ou admin | Altera status, prioridade e responsavel |
 | `POST` | `/api/painel/denuncias/[id]/comentarios` | Coordenador ou admin | Cria nota interna ou resposta publica |
 | `GET` | `/api/painel/estatisticas` | Coordenador ou admin | Dados agregados do dashboard |
-| `GET` | `/api/painel/relatorios/export` | Admin | Exporta CSV |
+| `GET` | `/api/painel/relatorios/export` | Admin | Exporta planilha do Excel (.xlsx) |
+| `POST` | `/api/senha/esqueci` | Publico | Envia o link de redefinicao de senha |
+| `POST` | `/api/senha/redefinir` | Publico | Troca a senha usando o link |
 | `GET` | `/api/painel/usuarios` | Admin | Lista usuarios |
 | `POST` | `/api/painel/usuarios` | Admin | Cria usuario |
 | `PATCH` | `/api/painel/usuarios` | Admin | Atualiza usuario |

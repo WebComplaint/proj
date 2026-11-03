@@ -26,8 +26,9 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { formatZodError } from "@/lib/api-response";
-import { canChangeStatus } from "@/lib/denuncias";
+import { canChangeStatus, statusLabelMap } from "@/lib/denuncias";
 import { notifyStatusChange } from "@/lib/email";
+import { isAdmin } from "@/lib/permissoes";
 import { prisma } from "@/lib/prisma";
 import { requirePainelSession } from "@/lib/server-auth";
 import { atualizarDenunciaSchema } from "@/lib/validacoes";
@@ -86,6 +87,12 @@ export async function GET(_request: Request, { params }: DenunciaRouteContext) {
 
   if (!denuncia) {
     return NextResponse.json({ erro: "Denúncia não encontrada." }, { status: 404 });
+  }
+
+  // Na denuncia anonima, o telefone so sai daqui para o administrador. Para o
+  // resto da equipe, o caso continua sem nenhum dado de quem denunciou.
+  if (denuncia.anonima && !isAdmin(auth.session?.user.perfil)) {
+    return NextResponse.json({ ...denuncia, denuncianteTelefone: null });
   }
 
   return NextResponse.json(denuncia);
@@ -177,7 +184,7 @@ export async function PATCH(request: Request, { params }: DenunciaRouteContext) 
             usuarioId: auth.session.user.id,
             statusAnterior: atual.status,
             statusNovo: data.status,
-            comentario: data.comentario || `Status alterado para ${data.status}.`,
+            comentario: data.comentario || `Status alterado para ${statusLabelMap[data.status]}.`,
             publico: true
           }
         });

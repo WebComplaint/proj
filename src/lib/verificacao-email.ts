@@ -19,6 +19,7 @@
 
 import { createHash, randomBytes } from "crypto";
 import type { TipoVerificacaoEmail } from "@prisma/client";
+import { getAppUrl } from "@/lib/app-url";
 import { sendEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 
@@ -149,7 +150,5 @@ export async function confirmarVerificacao(token: string): Promise<ResultadoVeri
 
 // BLOCO 6 - Monta o link que vai dentro do e-mail.
 function getVerificacaoUrl(token: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
-  return `${baseUrl.replace(/\/$/, "")}/verificar-email?token=${token}`;
+  return `${getAppUrl()}/verificar-email?token=${token}`;
 }

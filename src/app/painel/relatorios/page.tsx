@@ -1,11 +1,12 @@
 /**
  * O QUE ESTE ARQUIVO FAZ
  *
- * Tela do administrador com o resumo de um periodo e a exportacao em CSV.
+ * Tela do administrador com o resumo de um periodo e a exportacao para o
+ * Excel (.xlsx).
  *
  * O administrador escolhe as datas de inicio e fim e ve quantas denuncias
  * houve no periodo, quantas foram anonimas, quantas identificadas e quantas
- * urgentes. O botao Exportar CSV baixa uma planilha que abre no Excel.
+ * urgentes. O botao Exportar para Excel baixa a planilha do periodo.
  *
  * A planilha traz protocolo, categoria, status e datas, mas NAO traz o texto
  * do relato nem os dados pessoais do denunciante.
@@ -16,6 +17,8 @@
 import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import { NeuCard, StatCard } from "@/components/ui";
+import { hojeEmBrasilia } from "@/lib/date-utils";
+import { statusLabelMap } from "@/lib/denuncias";
 import { isAdmin } from "@/lib/permissoes";
 import { prisma } from "@/lib/prisma";
 import { getPainelSession } from "@/lib/server-auth";
@@ -65,7 +68,7 @@ export default async function RelatoriosPage({ searchParams = {} }: RelatoriosPa
       _count: { _all: true }
     })
   ]);
-  // BLOCO 3 - Monta o endereco do botao "Exportar CSV" levando junto o mesmo
+  // BLOCO 3 - Monta o endereco do botao "Exportar para Excel" levando junto o mesmo
   // periodo que esta na tela. Assim a planilha baixada corresponde exatamente
   // aos numeros que a pessoa esta vendo, sem surpresa.
   const exportParams = new URLSearchParams();
@@ -78,13 +81,16 @@ export default async function RelatoriosPage({ searchParams = {} }: RelatoriosPa
     exportParams.set("fim", searchParams.fim);
   }
 
+  // As datas do periodo vao no maximo ate hoje, e o fim nunca antes do inicio.
+  const hoje = hojeEmBrasilia();
+
   return (
     <main className="mx-auto grid w-full max-w-6xl gap-6">
       <section className="surface-neuro p-6 sm:p-8">
         <p className="text-sm font-bold text-text-secondary">Administração</p>
         <h1 className="mt-2 text-3xl font-bold">Relatórios</h1>
         <p className="mt-3 text-text-secondary">
-          Consulte um resumo do período e exporte as denúncias em CSV.
+          Consulte um resumo do período e exporte as denúncias para uma planilha do Excel.
         </p>
       </section>
 
@@ -92,17 +98,17 @@ export default async function RelatoriosPage({ searchParams = {} }: RelatoriosPa
         <form className="grid gap-4 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
           <label className="grid gap-2 text-sm font-bold text-text-secondary">
             Início
-            <input className="field-inset px-4" name="inicio" type="date" defaultValue={searchParams.inicio} />
+            <input className="field-inset px-4" name="inicio" type="date" max={searchParams.fim || hoje} defaultValue={searchParams.inicio} />
           </label>
           <label className="grid gap-2 text-sm font-bold text-text-secondary">
             Fim
-            <input className="field-inset px-4" name="fim" type="date" defaultValue={searchParams.fim} />
+            <input className="field-inset px-4" name="fim" type="date" min={searchParams.inicio} max={hoje} defaultValue={searchParams.fim} />
           </label>
           <button className="btn-primary inline-flex min-h-11 items-center justify-center px-5 py-3" type="submit">
             Aplicar período
           </button>
           <a className="btn-secondary inline-flex min-h-11 items-center justify-center px-5 py-3" href={`/api/painel/relatorios/export?${exportParams.toString()}`}>
-            Exportar CSV
+            Exportar para Excel
           </a>
         </form>
       </NeuCard>
@@ -119,7 +125,7 @@ export default async function RelatoriosPage({ searchParams = {} }: RelatoriosPa
           <div className="grid gap-3">
             {porStatus.map((item) => (
               <div key={item.status} className="flex min-h-11 items-center justify-between rounded-soft bg-base px-4 shadow-neuro-inset">
-                <span className="text-sm font-bold text-text-primary">{item.status}</span>
+                <span className="text-sm font-bold text-text-primary">{statusLabelMap[item.status]}</span>
                 <span className="text-sm font-bold text-text-secondary">{item._count._all}</span>
               </div>
             ))}

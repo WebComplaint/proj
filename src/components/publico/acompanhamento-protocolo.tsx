@@ -154,7 +154,7 @@ export function AcompanhamentoProtocolo({ protocolo }: { protocolo: string }) {
     }
 
     return state.data.historico.map((item) => ({
-      title: item.statusNovo ? `Status atualizado para ${statusLabels[item.statusNovo] ?? item.statusNovo}` : "Resposta da escola",
+      title: item.statusNovo ? (statusLabels[item.statusNovo] ? `Status atualizado para ${statusLabels[item.statusNovo]}` : "Atualização de status") : "Resposta da escola",
       description: item.comentario || "A equipe registrou uma atualização pública para o caso.",
       date: formatDate(item.criadoEm),
       visibility: "public" as const
