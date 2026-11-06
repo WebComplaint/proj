@@ -256,10 +256,18 @@ export function DenunciaForm() {
           method: "POST",
           body
         });
-        const result = await response.json();
+        // A Vercel recusa envios acima de ~4,5 MB antes de chegar na rota,
+        // e responde com texto em vez de JSON.
+        if (response.status === 413) {
+          throw new Error("O arquivo é grande demais para o envio. Escolha um menor ou reduza a qualidade da imagem.");
+        }
+
+        const result = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-          throw new Error(result.erro ?? "Não foi possível enviar o arquivo.");
+          // O código curto (ex.: storage_404) ajuda a equipe a achar a causa.
+          const codigo = result.codigo ? ` (código: ${result.codigo})` : "";
+          throw new Error(`${result.erro ?? "Não foi possível enviar o arquivo."}${codigo}`);
         }
 
         uploaded.push(result);

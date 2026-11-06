@@ -54,20 +54,50 @@ export class ErroArmazenamento extends Error {
   }
 }
 
+function statusDoErro(error: unknown) {
+  const detalhes = error as { statusCode?: string | number; status?: string | number };
+  return String(detalhes.statusCode ?? detalhes.status ?? "erro");
+}
+
+function pastaNaoExiste(error: { message: string }) {
+  return /bucket not found/i.test(error.message);
+}
+
 // BLOCO 3 - Guarda o arquivo e devolve o endereco que vai para o banco.
 // A pasta "anexos" e criada pela migration 20261103120000_bucket_anexos.
 export async function salvarAnexo(nomeArquivo: string, conteudo: Buffer, tipoMime: string) {
   const storage = getStorageAdmin();
 
   if (storage) {
-    const { error } = await storage
-      .from(BUCKET)
-      .upload(nomeArquivo, conteudo, { contentType: tipoMime, upsert: false });
+    const enviar = () =>
+      storage.from(BUCKET).upload(nomeArquivo, conteudo, { contentType: tipoMime, upsert: false });
+
+    let { error } = await enviar();
+
+    // Rede de seguranca: a migration do bucket so roda quando alguem executa
+    // "prisma migrate deploy" no banco de producao. Se ela nao rodou, a pasta
+    // nao existe; cria aqui (privada, mesmas regras) e tenta de novo.
+    if (error && pastaNaoExiste(error)) {
+      const criacao = await storage.createBucket(BUCKET, {
+        public: false,
+        fileSizeLimit: 10 * 1024 * 1024,
+        allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "application/pdf"]
+      });
+
+      if (criacao.error && !/already exists|duplicate/i.test(criacao.error.message)) {
+        throw new ErroArmazenamento(`storage_criar_pasta_${statusDoErro(criacao.error)}`, criacao.error.message);
+      }
+
+      ({ error } = await enviar());
+    }
 
     if (error) {
-      const detalhes = error as { statusCode?: string | number; status?: string | number };
-      const status = String(detalhes.statusCode ?? detalhes.status ?? "erro");
-      throw new ErroArmazenamento(`storage_${status}`, error.message);
+      // 403 / "row-level security" quase sempre significa que a chave usada
+      // nao e a secreta (service role): o upload esbarra nas regras de acesso.
+      const codigo = /row-level security|unauthorized|invalid (jwt|signature|api key)/i.test(error.message)
+        ? "storage_chave_sem_permissao"
+        : `storage_${statusDoErro(error)}`;
+      throw new ErroArmazenamento(codigo, error.message);
     }
 
     return `${PREFIXO_STORAGE}${nomeArquivo}`;
