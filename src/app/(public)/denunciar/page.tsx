@@ -4,7 +4,7 @@
  * E a pagina que apresenta o formulario de denuncia.
  *
  * Ela mesma so desenha o titulo e a explicacao. Todo o trabalho pesado do
- * formulario em 4 etapas fica no componente DenunciaForm, para que esta
+ * formulario em 3 etapas fica no componente DenunciaForm, para que esta
  * pagina continue simples de ler.
  *
  * Para a apresentacao: e a porta de entrada do relato.
@@ -28,7 +28,7 @@ export default function DenunciarPage() {
           Você pode enviar de forma anônima ou identificada. Categoria e descrição são obrigatórias; o resto é opcional.
         </p>
       </section>
-      {/* BLOCO 2 - O formulario em 4 etapas.
+      {/* BLOCO 2 - O formulario em 3 etapas.
           Toda a logica de preenchimento, validacao e envio fica no componente
           DenunciaForm, e nao aqui. Assim esta pagina continua curta e facil de
           ler, e o formulario poderia ser reaproveitado em outra tela. */}

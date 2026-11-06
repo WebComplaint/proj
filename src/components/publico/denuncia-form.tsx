@@ -3,14 +3,13 @@
 /**
  * O QUE ESTE ARQUIVO FAZ
  *
- * E o FORMULARIO DE DENUNCIA em 4 etapas, o componente mais importante da
+ * E o FORMULARIO DE DENUNCIA em 3 etapas, o componente mais importante da
  * parte publica do sistema.
  *
- * As 4 etapas:
+ * As 3 etapas:
  *   1. Relato   -> categoria e descricao (as unicas obrigatorias).
  *   2. Detalhes -> data, local e envolvidos (tudo opcional).
- *   3. Provas   -> ate 5 arquivos de 10 MB (opcional).
- *   4. Envio    -> anonima ou identificada, telefone e o aceite do termo.
+ *   3. Envio    -> anonima ou identificada, telefone e o aceite do termo.
  *
  * Por que dividir em etapas? Uma tela unica com 10 campos assusta quem ja
  * esta nervoso para denunciar. Perguntas curtas, uma de cada vez, reduzem
@@ -38,7 +37,6 @@ import { useRouter } from "next/navigation";
 import {
   CategoriaCard,
   CategoriaIcone,
-  FileDropzone,
   NeuButton,
   NeuCard,
   NeuCheckbox,
@@ -50,14 +48,6 @@ import { categoriasIniciais } from "@/lib/categorias";
 import { DATA_MINIMA_OCORRIDO, FOLGA_RELOGIO_MS, toLocalInputValue } from "@/lib/date-utils";
 import { formatarTelefone, telefoneValido } from "@/lib/telefone";
 
-// BLOCO 1 - O formato de um arquivo que ja foi enviado com sucesso.
-type UploadedFile = {
-  arquivoUrl: string;
-  nomeOriginal: string;
-  tipoMime: string;
-  tamanho: number;
-};
-
 // BLOCO 2 - Tudo que o formulario guarda enquanto a pessoa preenche.
 // E a "ficha em branco" que vai sendo completada etapa por etapa.
 type FormState = {
@@ -66,7 +56,6 @@ type FormState = {
   dataOcorrido: string;
   local: string;
   envolvidos: string;
-  anexos: UploadedFile[];
   anonima: boolean;
   denuncianteNome: string;
   denuncianteEmail: string;
@@ -84,7 +73,6 @@ const initialState: FormState = {
   dataOcorrido: "",
   local: "",
   envolvidos: "",
-  anexos: [],
   anonima: true,
   denuncianteNome: "",
   denuncianteEmail: "",
@@ -92,24 +80,15 @@ const initialState: FormState = {
   aceiteTermos: false
 };
 
-// BLOCO 4 - Os limites de anexo, repetidos aqui de proposito.
-// Eles ja existem no servidor. Aqui servem so para avisar a pessoa na hora,
-// antes de gastar tempo e dados enviando um arquivo que seria recusado.
-// Quem vale de verdade e sempre a conferencia do servidor.
-const MAX_FILES = 5;
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const allowedExtensions = ["jpg", "jpeg", "png", "webp", "pdf"];
-
 export function DenunciaForm() {
   // BLOCO 5 - A MEMORIA DO FORMULARIO.
   // Cada linha guarda uma informacao que muda enquanto a pessoa usa a tela.
   // Quando qualquer uma delas muda, a tela se redesenha sozinha.
   const router = useRouter();                                              // leva para outra pagina no fim
-  const [step, setStep] = useState(0);                                     // etapa atual (0 a 3)
+  const [step, setStep] = useState(0);                                     // etapa atual (0 a 2)
   const [form, setForm] = useState<FormState>(initialState);               // o que ja foi preenchido
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({}); // erros por campo
   const [formError, setFormError] = useState("");                          // erro geral do topo
-  const [uploading, setUploading] = useState(false);                       // esta enviando anexo?
   const [submitting, setSubmitting] = useState(false);                     // esta enviando a denuncia?
 
   // Conta os caracteres do relato para mostrar "35/20 caracteres minimos".
@@ -121,8 +100,7 @@ export function DenunciaForm() {
     () => [
       { label: "Relato", state: step > 0 ? "completed" : step === 0 ? "current" : "pending" },
       { label: "Detalhes", state: step > 1 ? "completed" : step === 1 ? "current" : "pending" },
-      { label: "Provas", state: step > 2 ? "completed" : step === 2 ? "current" : "pending" },
-      { label: "Envio", state: step === 3 ? "current" : "pending" }
+      { label: "Envio", state: step === 2 ? "current" : "pending" }
     ] as Array<{ label: string; state: "completed" | "current" | "pending" }>,
     [step]
   );
@@ -169,10 +147,9 @@ export function DenunciaForm() {
       }
     }
 
-    // Etapa 4 (Envio): o telefone e cobrado de todos, o e-mail so de quem
+    // Etapa 3 (Envio): o telefone e cobrado de todos, o e-mail so de quem
     // escolheu se identificar, e o aceite do termo e sempre obrigatorio.
-    // A etapa 3 nao aparece aqui porque e inteiramente opcional.
-    if (step === 3) {
+    if (step === 2) {
       if (!form.denuncianteTelefone.trim()) {
         errors.denuncianteTelefone = "Informe um telefone com DDD para enviar a denúncia.";
       } else if (!telefoneValido(form.denuncianteTelefone)) {
@@ -201,7 +178,7 @@ export function DenunciaForm() {
       return;
     }
 
-    setStep((current) => Math.min(current + 1, 3));
+    setStep((current) => Math.min(current + 1, 2));
   }
 
   // BLOCO 10 - Botao "Voltar". Limpa os erros antes de voltar, porque nao faz
@@ -211,85 +188,6 @@ export function DenunciaForm() {
     setFormError("");
     setFieldErrors({});
     setStep((current) => Math.max(current - 1, 0));
-  }
-
-  // BLOCO 11 - ENVIO DOS ANEXOS.
-  async function uploadFiles(files: FileList | null) {
-    if (!files?.length) {
-      return;
-    }
-
-    setFormError("");
-    const selectedFiles = Array.from(files);
-
-    // Confere o total: os que ja estao mais os que acabaram de ser escolhidos.
-    // Sem essa soma, seria possivel passar dos 5 enviando de dois em dois.
-    if (form.anexos.length + selectedFiles.length > MAX_FILES) {
-      setFormError("Envie no máximo 5 arquivos. Remova um anexo antes de adicionar outro.");
-      return;
-    }
-
-    setUploading(true);
-
-    try {
-      const uploaded: UploadedFile[] = [];
-
-      // Envia um arquivo de cada vez. Cada um passa pelas mesmas conferencias
-      // de formato e tamanho antes de sair do navegador.
-      for (const file of selectedFiles) {
-        const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
-
-        if (!allowedExtensions.includes(extension)) {
-          throw new Error("Formato não permitido. Envie jpg, jpeg, png, webp ou pdf.");
-        }
-
-        if (file.size > MAX_FILE_SIZE) {
-          throw new Error("O arquivo passa de 10 MB. Escolha um menor ou reduza a qualidade da imagem.");
-        }
-
-        // Empacota o arquivo e manda para a rota /api/upload, que salva e
-        // devolve o endereco onde ele ficou guardado.
-        const body = new FormData();
-        body.append("file", file);
-
-        const response = await fetch("/api/upload", {
-          method: "POST",
-          body
-        });
-        // A Vercel recusa envios acima de ~4,5 MB antes de chegar na rota,
-        // e responde com texto em vez de JSON.
-        if (response.status === 413) {
-          throw new Error("O arquivo é grande demais para o envio. Escolha um menor ou reduza a qualidade da imagem.");
-        }
-
-        const result = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-          // O código curto (ex.: storage_404) ajuda a equipe a achar a causa.
-          const codigo = result.codigo ? ` (código: ${result.codigo})` : "";
-          throw new Error(`${result.erro ?? "Não foi possível enviar o arquivo."}${codigo}`);
-        }
-
-        uploaded.push(result);
-      }
-
-      updateField("anexos", [...form.anexos, ...uploaded]);
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Não foi possível enviar o arquivo.");
-    } finally {
-      // O "finally" roda sempre, com erro ou sem erro. Isso garante que o
-      // aviso de "Enviando arquivo" sempre desapareca da tela.
-      setUploading(false);
-    }
-  }
-
-  // BLOCO 12 - Botao "Remover arquivo". Monta a lista de novo sem o arquivo
-  // escolhido, comparando pelo endereco dele.
-  function removeFile(url: string) {
-    updateField(
-      "anexos",
-      form.anexos.filter((file) => file.arquivoUrl !== url)
-    );
   }
 
   // BLOCO 13 - O ENVIO FINAL DA DENUNCIA.
@@ -319,7 +217,6 @@ export function DenunciaForm() {
           dataOcorrido: form.dataOcorrido ? new Date(form.dataOcorrido).toISOString() : null,
           local: form.local || null,
           envolvidos: form.envolvidos || null,
-          anexos: form.anexos,
           anonima: form.anonima,
 
           // A REGRA DO ANONIMATO, aplicada tambem aqui.
@@ -339,8 +236,7 @@ export function DenunciaForm() {
 
       // O servidor recusou: aproveita a lista de campos com problema que ele
       // devolveu e marca cada um em vermelho na tela.
-      // Nem todo campo tem um lugar para mostrar o erro (os anexos, por
-      // exemplo). Por isso as mensagens dos campos tambem vao para o aviso do
+      // Nem todo campo tem um lugar para mostrar o erro. Por isso as mensagens dos campos tambem vao para o aviso do
       // topo: a pessoa sempre fica sabendo o que precisa corrigir.
       if (!response.ok) {
         const campos: Record<string, string> = result.campos ?? {};
@@ -367,7 +263,7 @@ export function DenunciaForm() {
   }
 
   return (
-    <div className="grid gap-6" aria-busy={submitting || uploading || undefined}>
+    <div className="grid gap-6" aria-busy={submitting || undefined}>
       {/* BLOCO 14 - A TELA. A trilha de etapas fica sempre visivel no topo. */}
       <StepIndicator steps={steps} />
 
@@ -463,42 +359,8 @@ export function DenunciaForm() {
           </section>
         )}
 
-        {/* ETAPA 3 - PROVAS. Ate 5 arquivos de 10 MB, tambem opcional. */}
+        {/* ETAPA 3 - IDENTIFICACAO E ENVIO. A etapa mais delicada do sistema. */}
         {step === 2 && (
-          <section className="grid gap-6">
-            <div>
-              <h2 className="text-2xl font-bold">Provas</h2>
-              <p className="mt-2 text-sm leading-6 text-text-secondary">
-                Opcional. Você pode anexar até 5 arquivos, com 10 MB cada.
-              </p>
-            </div>
-            <FileDropzone
-              label={uploading ? "Enviando arquivo" : "Anexos"}
-              multiple
-              accept=".jpg,.jpeg,.png,.webp,.pdf"
-              disabled={uploading}
-              onChange={(event) => uploadFiles(event.target.files)}
-            />
-            {form.anexos.length > 0 && (
-              <ul className="grid gap-3">
-                {form.anexos.map((file) => (
-                  <li key={file.arquivoUrl} className="surface-neuro-sm flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-bold">{file.nomeOriginal}</p>
-                      <p className="text-sm text-text-secondary">{formatFileSize(file.tamanho)}</p>
-                    </div>
-                    <NeuButton variant="ghost" size="sm" onClick={() => removeFile(file.arquivoUrl)}>
-                      Remover arquivo
-                    </NeuButton>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
-
-        {/* ETAPA 4 - IDENTIFICACAO E ENVIO. A etapa mais delicada do sistema. */}
-        {step === 3 && (
           <section className="grid gap-6">
             <div>
               <h2 className="text-2xl font-bold">Identificação e envio</h2>
@@ -620,13 +482,13 @@ export function DenunciaForm() {
       </NeuCard>
 
       {/* BLOCO 15 - A NAVEGACAO ENTRE AS ETAPAS.
-          Nas tres primeiras aparece "Continuar"; na ultima, "Enviar denuncia".
+          Nas duas primeiras aparece "Continuar"; na ultima, "Enviar denuncia".
           Trocar o texto do botao deixa claro que aquele clique e o definitivo. */}
       <div className="grid gap-3 sm:flex sm:justify-between">
         <NeuButton variant="ghost" onClick={goBack} disabled={step === 0 || submitting}>
           Voltar
         </NeuButton>
-        {step < 3 ? (
+        {step < 2 ? (
           <NeuButton className="w-full sm:w-auto" size="lg" onClick={goNext}>
             Continuar
           </NeuButton>
@@ -638,14 +500,4 @@ export function DenunciaForm() {
       </div>
     </div>
   );
-}
-
-// BLOCO 16 - Mostra o tamanho do arquivo em KB ou MB, para a pessoa conferir
-// o que anexou sem precisar entender a contagem em bytes do computador.
-function formatFileSize(size: number) {
-  if (size < 1024 * 1024) {
-    return `${Math.round(size / 1024)} KB`;
-  }
-
-  return `${(size / 1024 / 1024).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MB`;
 }
