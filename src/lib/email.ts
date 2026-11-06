@@ -73,8 +73,14 @@ export async function sendEmail(payload: EmailPayload): Promise<EmailResult> {
 
   // Se o servico recusou, avisa quem chamou. Quem chama sempre trata esse
   // erro sem derrubar a operacao principal.
+  // A resposta do Resend vai junto na mensagem, para o registro do servidor
+  // mostrar o motivo real (chave invalida, dominio nao verificado...). A
+  // chave nunca aparece aqui: so o status e o texto que o Resend devolveu.
   if (!response.ok) {
-    throw new Error("Não foi possível enviar a notificação por e-mail.");
+    const motivo = await response.text().catch(() => "");
+    throw new Error(
+      `Não foi possível enviar a notificação por e-mail. Resend respondeu ${response.status}: ${motivo.slice(0, 500)}`
+    );
   }
 
   return {
